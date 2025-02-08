@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { generateDefaultProfiles } from "../utils/profileUtils";
+import { generateDefaultProfiles } from "../utils/profileUtils.js";
 
 
 const routerSchema = new mongoose.Schema(

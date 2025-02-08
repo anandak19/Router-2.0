@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
 
-// register new user
+// register new admin
 export const registerAdmin = async (req, res) => {
   const { email, phoneNumber, userName, password } = req.body;
 
@@ -12,7 +12,6 @@ export const registerAdmin = async (req, res) => {
       $or: [{ email: email }, { userName: userName }],
     });
     if (existingUser) {
-      console.log(existingUser);
       return res.status(409).json({ error: "User already exists" });
     }
 
@@ -65,7 +64,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
-//  addClient by admin
+// addClient by admin
 export const addClient = async (req, res) => {
   try {
     const { email, phoneNumber, userName, password } = req.body;
@@ -73,6 +72,7 @@ export const addClient = async (req, res) => {
     const existingUser = await userModel.findOne({
       $or: [{ email: email }, { userName: userName }],
     });
+    
     if (existingUser) {
       return res.status(409).json({ error: "User already exists" });
     }
@@ -92,3 +92,4 @@ export const addClient = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
