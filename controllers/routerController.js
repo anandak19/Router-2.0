@@ -62,24 +62,29 @@ export const addRouter = async (req, res) => {
 
 // to get all routers of a user --
 export const getUserRouters = async (req, res) => {
-
-  /*
-  find all the routers added by user from userRouter collection
-  if empty return as empty message
-  if found we will get, an array of object with object.routerId
-  now aggregate and join this with the routers collections and get the details into it
-  return the joined data 
-  */
  try {
   const user = req.user
+  const routers = await userRouterModel.aggregate([
+    {
+      $match: { userId: user._id },
+    },
+    {
+      $lookup: {
+        from: "routers", 
+        localField: "routerId", 
+        foreignField: "_id", 
+        as: "routerDetails", 
+      },
+    },
+    {
+      $unwind: "$routerDetails", 
+    },
+    {
+      $replaceRoot: { newRoot: "$routerDetails" },
+    },
+  ]);
 
-
-
-      // return res
-      //   .status(404)
-      //   .json({ message: "No routers found for this user" });
-
-    // return res.status(200).json(userWithRouters.routers);
+    return res.status(200).json(routers);
   } catch (error) {
     console.error("Error fetching routers:", error);
     return res.status(500).json({ error: "Internal server error" });
