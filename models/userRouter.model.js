@@ -16,6 +16,9 @@ const UserRoutersSchema = new Schema(
       required: true,
       index: true,
     },
+    totalSalesByUserInRouter: {type: Number, default: 0, min: 0 },
+    totalCollectedCash: {type: Number, default: 0, min: 0 },
+    balanceLeftInRouter: {type: Number, default: 0, min: 0 },
   },
   {
     timestamps: true,

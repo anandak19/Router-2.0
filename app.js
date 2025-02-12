@@ -1,6 +1,8 @@
 import express from "express";
 import userRoutes from "./routes/userRoutes.js";
 import routerRoute from "./routes/routerRoute.js";
+import salesRoutes from "./routes/salesRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 // import voucherAggregationRoutes from "./routes/voucherAggregationRoutes.js"
 import cors from "cors";
 
@@ -14,4 +16,6 @@ app.get("/", (req, res) => {
 
 app.use("/api", userRoutes);
 app.use("/api", routerRoute);
+app.use("/api/sales", salesRoutes)
+app.use("/api/admin", adminRoutes)
 // app.use("/api", voucherAggregationRoutes);

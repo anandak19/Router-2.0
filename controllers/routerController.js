@@ -130,3 +130,7 @@ export const getUserRouters = async (req, res) => {
 //     return res.status(500).json({ message: "Internal server error" });
 //   }
 // };
+
+// to link a router with user 
+
+// to link all the routers linked with a user // dns, port, added User id

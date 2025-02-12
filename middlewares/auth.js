@@ -38,8 +38,6 @@ export const validateInputs = async (req, res, next) => {
   next();
 };
 
-
-
 // for token validation 
 export const validateToken = async (req, res, next) => {
   try {

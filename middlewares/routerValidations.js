@@ -1,5 +1,5 @@
 import routerModel from "../models/router.model.js";
-
+import mongoose from "mongoose";
 
 export const validateNewRouterData = (req, res, next) => {
   try {
@@ -22,6 +22,10 @@ export const varifyRouter = async (req, res, next) => {
 
     if (!routerId) {
       return res.status(404).json({ message: "Please provide router" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(routerId)) {
+      return res.status(400).json({ message: "Invalid router ID format. Must be a 24-character hex string." });
     }
 
     const router = await routerModel.findById(routerId);
