@@ -3,6 +3,7 @@ import userModel from "../models/user.model.js";
 import userRouterModel from "../models/userRouter.model.js";
 import voucherModel from "../models/voucher.model.js";
 
+import { getUserSales } from "../utils/userSales.js";
 
 /*
 period params 
@@ -128,21 +129,67 @@ export const getSalesByRouter = async (req, res) => {
   }
 };
 
-
-//show total vouchers and cost by a user in all router
-
-//show total vouchers and cost by a user in one router only
-
-
-export const totalSalesByUser = async (req, res) => {
+// total sales of login in user, in each router and total
+export const totalSalesByUser = async (req, res, next) => {
   try {
-    const user = req.user
+    const user = req.user;
 
+    if (!user) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
 
+    if (!user._id) {
+      return res.status(400).json({ message: "User ID is missing or invalid" });
+    }
 
+    const salesData = await getUserSales(user._id);
+    if (!salesData) {
+      return res
+        .status(404)
+        .json({ message: "No sales data found for this user" });
+    }
 
-    
+    res.status(200).json({
+      message: "Sales data retrieved successfully",
+      routerSales: salesData,
+      totalBalance: user.balanceLeft,
+    });
   } catch (error) {
-    
+    console.log(error);
+    next(error);
   }
-}
+};
+
+// total sales of given user , in each router and total
+export const salesOfGivenUser = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const user = await userModel.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const salesData = await getUserSales(userId);
+
+    if (!salesData) {
+      return res
+        .status(404)
+        .json({ message: "No sales data found for this user" });
+    }
+
+    res.status(200).json({
+      message: "User sales data retrieved successfully",
+      totalBalance: user.balanceLeft,
+      routerSales: salesData,
+    });
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};

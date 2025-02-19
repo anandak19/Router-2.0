@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
     totalSales: { type: Number, default: 0, min: 0 },
     totalCollectedCash: { type: Number, default: 0, min: 0 },
     balanceLeft: { type: Number, default: 0, min: 0 },
+    userCollectedCash: { type: Number, default: 0, min: 0 }
   },
   {
     timestamps: true,

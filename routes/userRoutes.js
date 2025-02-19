@@ -8,10 +8,4 @@ router.post("/user/register/admin", validateInputs, registerAdmin)
 router.post("/user/register", validateToken, authenticateAdmin, validateInputs, addClient)
 router.post("/user/login", loginUser)
 
-
-
-
-
-
-
 export default router;

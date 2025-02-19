@@ -4,26 +4,26 @@ const { Schema } = mongoose;
 
 const CashCollectionSchema = new Schema(
   {
-    collectedFromUserId: {
+    collectedFrom: {
       type: Schema.Types.ObjectId,
       ref: "Users",
       required: true,
     },
-    collectedByUserId: {
+    collectedBy: {
       type: Schema.Types.ObjectId,
       ref: "Users",
       required: true,
     },
     amount: { type: Number, required: true, min: 0 },
-    comment: { type: String, default: null },
-    collectedFromRouters: [
+    comment: { type: String, default: "", trim: true },
+    breakdown: [
       {
-        routerId: {
-          type: Schema.Types.ObjectId,
-          ref: "Routers",
+        router: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Router",
           required: true,
         },
-        collectedAmount: { type: Number, required: true, min: 0 },
+        amount: { type: Number, required: true, min: 0 },
       },
     ],
   },
