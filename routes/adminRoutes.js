@@ -9,7 +9,7 @@ const router = express.Router()
 // list all the users added by admin  /admin/users
 router.get("/users", validateToken, authenticateAdmin, getAddedUsers)
 
-/// Admin selects a user to view their data → (API: GET /api/users/:userId
+/// Admin selects a user to view their data 
 router.get("/users/:requestedUserId", validateToken, authenticateAdmin, getUserDetails) 
 
 // Admin clicks "Add Router" and enters DNS + Port + username

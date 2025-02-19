@@ -8,7 +8,6 @@ const router = express.Router()
 
 router.get("/router", validateToken, getUserRouters)
 router.post("/router/add-router", validateToken, authenticateAdmin, validateNewRouterData, addRouter)
-router.post("/router/add-router", validateToken, authenticateAdmin, validateNewRouterData, addRouter)
 // router.delete("/router/:routerId", deleteOneRouter)
 router.post("/router/voucher/:routerId", validateToken, varifyRouter, validateNewVocherData, addVoucher)
 // router.delete('/router/delete-voucher/:routerId/:voucherId', deleteVoucherFromRouter);

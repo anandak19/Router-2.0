@@ -16,6 +16,7 @@ const UserRoutersSchema = new Schema(
       required: true,
       index: true,
     },
+    hotspot: { type: String, required: true, trim: true },
     totalSalesByUserInRouter: {type: Number, default: 0, min: 0 },
     totalCollectedCash: {type: Number, default: 0, min: 0 },
     balanceLeftInRouter: {type: Number, default: 0, min: 0 },

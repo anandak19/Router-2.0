@@ -12,7 +12,6 @@ const routerSchema = new mongoose.Schema(
     callerId: { type: String, enum: ["", "bind"], default: "", },
     profiles: { type: Map, of:Number, default: generateDefaultProfiles },
     deviceName: { type: String, required: true, trim: true },
-    hotspot: { type: String, required: true, trim: true },
   },
   {
     timestamps: true,

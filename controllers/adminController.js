@@ -50,9 +50,9 @@ export const getUserDetails = async (req, res) => {
 export const linkRouterWithUser = async (req, res) => {
   try {
     const { requestedUserId } = req.params;
-    const { dns, port, username } = req.body;
+    const { dns, port, username, hotspot } = req.body;
 
-    if (!requestedUserId || !dns || !port || !username) {
+    if (!requestedUserId || !dns || !port || !username || !hotspot) {
       return res
         .status(400)
         .json({ success: false, message: "Missing required fields" });
@@ -89,6 +89,7 @@ export const linkRouterWithUser = async (req, res) => {
     const newUserRouter = new userRouterModel({
       userId: user._id,
       routerId: router._id,
+      hotspot: hotspot
     });
 
     await newUserRouter.save();

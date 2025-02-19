@@ -6,83 +6,90 @@ import mongoose from "mongoose";
 
 // to add new router --
 export const addRouter = async (req, res) => {
-  const session = await mongoose.startSession(); 
+  const session = await mongoose.startSession();
 
   try {
-    session.startTransaction(); 
+    session.startTransaction();
 
     const user = req.user;
-    const { dns, port, userName, password, hotspot, deviceName, callerId } = req.body;
+    const { dns, port, userName, password, hotspot, deviceName, callerId } =
+      req.body;
 
     let router = await routerModel.findOne({ dns, port }).session(session);
 
-    // if no exixting router, create one 
+    // if no exixting router, create one
     if (!router) {
       const newRouter = new routerModel({
         dns,
         port,
         userName,
         password,
-        hotspot,
         deviceName,
         callerId,
-        userId: user._id
+        userId: user._id,
       });
       router = await newRouter.save({ session });
     }
 
-    const existingUserRouter = await userRouterModel.findOne({
-      routerId: router._id,
-      userId: user._id
-    }).session(session);
+    const existingUserRouter = await userRouterModel
+      .findOne({
+        routerId: router._id,
+        userId: user._id,
+      })
+      .session(session);
 
     if (existingUserRouter) {
-      await session.abortTransaction(); 
-      return res.status(409).json({ message: "Router already linked to user." });
+      await session.abortTransaction();
+      return res
+        .status(409)
+        .json({ message: "Router already linked to user." });
     }
 
     await userRouterModel.create(
-      [{ userId: user._id, routerId: router._id }],
+      [{ userId: user._id, routerId: router._id, hotspot }],
       { session }
     );
 
-    await session.commitTransaction(); 
+    await session.commitTransaction();
 
     return res.status(201).json({ message: "Router added successfully" });
-
   } catch (error) {
     await session.abortTransaction();
     console.error("Error adding router:", error.message);
     return res.status(500).json({ error: "Internal server error" });
-  } finally{
+  } finally {
     session.endSession();
   }
 };
 
-
 // to get all routers of a user --
 export const getUserRouters = async (req, res) => {
- try {
-  const user = req.user
-  const routers = await userRouterModel.aggregate([
-    {
-      $match: { userId: user._id },
-    },
-    {
-      $lookup: {
-        from: "routers", 
-        localField: "routerId", 
-        foreignField: "_id", 
-        as: "routerDetails", 
+  try {
+    const user = req.user;
+    const routers = await userRouterModel.aggregate([
+      {
+        $match: { userId: user._id },
       },
-    },
-    {
-      $unwind: "$routerDetails", 
-    },
-    {
-      $replaceRoot: { newRoot: "$routerDetails" },
-    },
-  ]);
+      {
+        $lookup: {
+          from: "routers",
+          localField: "routerId",
+          foreignField: "_id",
+          as: "routerDetails",
+        },
+      },
+      {
+        $unwind: "$routerDetails",
+      },
+      {
+        $addFields: {
+          "routerDetails.hotspot": "$hotspot",
+        },
+      },
+      {
+        $replaceRoot: { newRoot: "$routerDetails" },
+      },
+    ]);
 
     return res.status(200).json(routers);
   } catch (error) {
@@ -130,7 +137,3 @@ export const getUserRouters = async (req, res) => {
 //     return res.status(500).json({ message: "Internal server error" });
 //   }
 // };
-
-// to link a router with user 
-
-// to link all the routers linked with a user // dns, port, added User id
