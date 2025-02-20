@@ -87,7 +87,10 @@ export const getUserRouters = async (req, res) => {
         },
       },
       {
-        $replaceRoot: { newRoot: "$routerDetails" },
+        $project: {
+          _id: 0,  
+          router: "$routerDetails", 
+        },
       },
     ]);
 
