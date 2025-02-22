@@ -19,6 +19,36 @@ export const getAddedUsers = async (req, res) => {
   }
 };
 
+export const changeUserRole = async (req, res) => {
+  try {
+    const userId = req.params.id
+
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+
+    const user = await userModel.findById(userId)
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (!user.userType) {
+      return res.status(400).json({ error: "User type is missing in user data" });
+    }
+
+    user.userType = user.userType === "client" ? "admin" : "client";
+
+    await user.save()
+
+    res.status(200).json({message: `User role updated to ${user.userType} successfully`})
+
+  } catch (error) {
+    console.log(error)
+    res.status(200).json({error: "Internal server error"})
+  }
+};
+
 export const getUserDetails = async (req, res) => {
   try {
     const { requestedUserId } = req.params;
@@ -66,7 +96,7 @@ export const linkRouterWithUser = async (req, res) => {
     }
 
     const router = await routerModel.findOne({ dns, port, userName: username });
-    console.log(router)
+    console.log(router);
     if (!router) {
       return res
         .status(404)
@@ -78,18 +108,16 @@ export const linkRouterWithUser = async (req, res) => {
       routerId: router._id,
     });
     if (existingLink) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Router already linked to this user",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Router already linked to this user",
+      });
     }
 
     const newUserRouter = new userRouterModel({
       userId: user._id,
       routerId: router._id,
-      hotspot: hotspot
+      hotspot: hotspot,
     });
 
     await newUserRouter.save();

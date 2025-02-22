@@ -44,10 +44,11 @@ export const varifyRouter = async (req, res, next) => {
 
 export const validateNewVocherData = (req, res, next) => {
   try {
-    const { couponNumber, profile, phoneNumber } = req.body;
+    const { profile, phoneNumber } = req.body;
+    const count = Number(req.body.count); 
 
-    if (!couponNumber) {
-      return res.status(400).json({ error: "Coupon number is needed" });
+    if (count && isNaN(count) && count <= 0) {
+      return res.status(400).json({ error: "Count should be a positive number" });
     }
 
     const profileRegex = /^(?:[1-9]|[12][0-9]|30)-D$/;

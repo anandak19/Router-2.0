@@ -13,6 +13,7 @@ export const addVoucher = async (req, res) => {
     const user = req.user;
     const router = req.router;
     const { couponNumber, profile, phoneNumber } = req.body;
+    const count = Number(req.body.count) || 1; 
 
     if (!user || !router) {
       await session.abortTransaction();
@@ -59,12 +60,14 @@ export const addVoucher = async (req, res) => {
     }
 
     // Get the profile cost
-    const cost = router.profiles.get(profile);
+    const profileCost = router.profiles.get(profile);
+    const cost = profileCost * count
 
     // Create a new voucher
     const newVoucher = new voucherModel({
       couponNumber,
       profile,
+      count,
       cost,
       phoneNumber,
       userId: user._id,
