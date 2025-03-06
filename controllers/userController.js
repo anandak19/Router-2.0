@@ -1,6 +1,10 @@
-import userModel from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
+
+import userModel from "../models/user.model.js";
+import permissionModel from "../models/permission.model.js";
+
 dotenv.config();
 
 // register new admin
@@ -66,14 +70,19 @@ export const loginUser = async (req, res) => {
 
 // addClient by admin
 export const addClient = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction(); 
   try {
     const { email, phoneNumber, userName, password } = req.body;
 
-    const existingUser = await userModel.findOne({
-      $or: [{ email: email }, { userName: userName }],
-    });
+    const existingUser = await userModel.findOne(
+      { $or: [{ email }, { userName }] },
+      null,
+      { session }
+    );
     
     if (existingUser) {
+      await session.abortTransaction();
       return res.status(409).json({ error: "User already exists" });
     }
 
@@ -85,11 +94,24 @@ export const addClient = async (req, res) => {
       addedBy: req.user._id,
       userType: "client",
     });
-    await newUser.save();
+    await newUser.save({ session });
+
+    const newPermission = new permissionModel({
+      viewer: req.user._id,
+      canView: newUser._id,
+    });
+    await newPermission.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
     res.status(201).json({ message: "Client user registered successfully" });
   } catch (error) {
+    await session.abortTransaction(); 
     console.error("Error during registration:", error);
     res.status(500).json({ error: "Internal server error" });
+  }finally {
+    session.endSession();
   }
 };
 

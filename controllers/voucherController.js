@@ -13,7 +13,7 @@ export const addVoucher = async (req, res) => {
     const user = req.user;
     const router = req.router;
     const { couponNumber, profile, phoneNumber } = req.body;
-    const count = Number(req.body.count) || 1; 
+    const count = Number(req.body.count) || 1;
 
     if (!user || !router) {
       await session.abortTransaction();

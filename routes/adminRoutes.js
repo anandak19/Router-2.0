@@ -1,5 +1,5 @@
 import express from "express"
-import { changeUserRole, getAddedUsers, getUserDetails, linkRouterWithUser } from "../controllers/adminController.js";
+import { changeUserRole, getAddedUsers, getUserDetails, grantViewPermission, linkRouterWithUser, revokeViewPermission } from "../controllers/adminController.js";
 import { authenticateAdmin, validateToken } from "../middlewares/auth.js";
 import { deductUserBalace } from "../controllers/accountsController.js";
 import { validateObjectId } from "../middlewares/requestValidations.js";
@@ -9,6 +9,12 @@ const router = express.Router()
 
 // list all the users added by admin  /admin/users
 router.get("/users", validateToken, authenticateAdmin, getAddedUsers)
+
+// grandt view permission (link admin with clint)
+router.post("/users/permission/grant", validateToken, authenticateAdmin, grantViewPermission)
+
+// revoke or remove a user from the view permission list
+router.delete("/users/permission/revoke/:id", validateToken, authenticateAdmin, validateObjectId, revokeViewPermission)
 
 // change selected user role to admin/clint
 router.patch("/users/:id/role", validateToken, authenticateAdmin, validateObjectId, changeUserRole)

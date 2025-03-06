@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, trim: true },
     phoneNumber: { type: String, required: true, trim: true },
-    userName: { type: String, required: true, trim: true },
+    userName: { type: String, required: true, unique: true, trim: true },
     userType: { type: String, required: true, enum: ["admin", "client"] },
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
