@@ -44,11 +44,15 @@ export const varifyRouter = async (req, res, next) => {
 
 export const validateNewVocherData = (req, res, next) => {
   try {
-    const { profile, phoneNumber } = req.body;
+    const { couponNumber, profile, phoneNumber } = req.body;
     const count = Number(req.body.count); 
 
     if (count && isNaN(count) && count <= 0) {
       return res.status(400).json({ error: "Count should be a positive number" });
+    }
+
+    if (!count && !couponNumber) {
+      return res.status(400).json({ error: "Coupon number is needed since no count is provided" });
     }
 
     const profileRegex = /^(?:[1-9]|[12][0-9]|30)-D$/;
@@ -66,8 +70,8 @@ export const validateNewVocherData = (req, res, next) => {
     }
 
     if (phoneNumber) {
-      const dubaiPhoneRegex = /^\d{9,15}$/;
-      if (!dubaiPhoneRegex.test(phoneNumber)) {
+      const phoneRegex = /^\+?\d{7,15}$/;
+      if (!phoneRegex.test(phoneNumber)) {
         return res.status(400).json({ error: "Invalid phone number" });
       }
     }

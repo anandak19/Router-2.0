@@ -61,7 +61,7 @@ export const loginUser = async (req, res) => {
     );
 
     // sending username and token to frontend
-    res.status(200).json({ userName, userID, token });
+    res.status(200).json({ userName, userID, token, userType: userData.userType });
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).json({ error: "Internal server error" });
