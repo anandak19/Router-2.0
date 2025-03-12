@@ -115,5 +115,27 @@ export const addClient = async (req, res) => {
   }
 };
 
+export const getLatestTransaction = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(400).json({error: "User details not found"})
+    }
+    /*
+    write the pipeline to get the latest transaction of user
+    match with userId from
+    sort all transactions based on latest transaction first
+    limit only one transaction
+    join the transaction with user collection and get the collector and collectedby users name
+    join with routers collection and find the details of document.brakedown.router
+    fill the details of router on each doc and return the full doc
+    */
+    
+  } catch (error) {
+    console.error("Error fetching latest transaction:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
 
 

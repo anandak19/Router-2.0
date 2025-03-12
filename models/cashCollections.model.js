@@ -16,16 +16,19 @@ const CashCollectionSchema = new Schema(
     },
     amount: { type: Number, required: true, min: 0 },
     comment: { type: String, default: "", trim: true },
-    breakdown: [
-      {
-        router: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Router",
-          required: true,
+    breakdown: {
+      type: [
+        {
+          router: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Router",
+            required: true,
+          },
+          amount: { type: Number, required: true, min: 0 },
         },
-        amount: { type: Number, required: true, min: 0 },
-      },
-    ],
+      ],
+      default: null
+    },
   },
   {
     timestamps: true,

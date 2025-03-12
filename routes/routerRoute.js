@@ -15,5 +15,4 @@ router.post("/router/voucher/:routerId", validateToken, validateObjectId, varify
 
 router.get("/router/voucher/:routerId", validateToken, validateObjectId, varifyRouter, getVouchersByRouter)
 
-
 export default router;

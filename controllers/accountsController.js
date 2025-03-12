@@ -4,19 +4,21 @@ import userRouterModel from "../models/userRouter.model.js";
 import cashCollectionsModel from "../models/cashCollections.model.js";
 
 export const deductUserBalace = async (req, res) => {
-    const session = await mongoose.startSession()
-    session.startTransaction()
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { amount, comment, userId } = req.body;
 
-    const requestedAmount = parseInt(amount)
+    const requestedAmount = parseInt(amount);
 
     if (!requestedAmount || requestedAmount <= 0) {
       return res.status(400).json({ error: "Enter a valid amount to collect" });
     }
 
     if (!userId) {
-      return res.status(400).json({ error: "Choose a user to collect cash from" });
+      return res
+        .status(400)
+        .json({ error: "Choose a user to collect cash from" });
     }
 
     const user = await userModel.findById(userId);
@@ -30,69 +32,90 @@ export const deductUserBalace = async (req, res) => {
         .json({ error: "Insufficient balace for user! Enter a valid amount" });
     }
 
-    const userRouters = await userRouterModel
-      .find({ userId: userId, balanceLeftInRouter: { $gt: 0 } })
-      .sort({ balanceLeftInRouter: 1 }).session(session)
+    let remainingAmount = requestedAmount;
+
+
+    // if the userCollectedCash has cash in it deduct from that first
+    if (user.userCollectedCash > 0) {
+      const amountToDeduct = Math.min(user.userCollectedCash, remainingAmount);
+      user.userCollectedCash -= amountToDeduct;
+      remainingAmount -= amountToDeduct;
+    }
+
+    const transactionBreakdown = [];
+    // if still their is cash needed to reach the target amount, get it from routers
+    if (remainingAmount > 0) {
+      const userRouters = await userRouterModel
+        .find({ userId: userId, balanceLeftInRouter: { $gt: 0 } })
+        .sort({ balanceLeftInRouter: 1 })
+        .session(session);
 
       if (!userRouters) {
-        return res.status(400).json({ error: "No routers found for user with balace" });
+        return res
+          .status(400)
+          .json({ error: "No routers found for user with balace" });
       }
 
-      let remainingAmount = requestedAmount
-      const transactionBreakdown = [];
-
-      for(const router of userRouters) {
+      for (const router of userRouters) {
         if (remainingAmount <= 0) break;
 
-        const amountToDeduct = Math.min(router.balanceLeftInRouter, remainingAmount);
+        const amountToDeduct = Math.min(
+          router.balanceLeftInRouter,
+          remainingAmount
+        );
         router.balanceLeftInRouter -= amountToDeduct;
-        router.totalCollectedCash += amountToDeduct
+        router.totalCollectedCash += amountToDeduct;
         remainingAmount -= amountToDeduct;
 
         transactionBreakdown.push({
-            router: router._id,
-            amount: amountToDeduct,
+          router: router._id,
+          amount: amountToDeduct,
         });
-
         await router.save({ session });
       }
-    //   still cash left to collect 
+    }
+
+    //   still cash left to collect
     if (remainingAmount > 0) {
-        return res.status(400).json({ error: "Insufficient balance across routers to collect the full amount" });
+      return res
+        .status(400)
+        .json({
+          error:
+            "Insufficient balance across routers to collect the full amount",
+        });
     }
 
-    const cashCollector = req.user
+    const cashCollector = req.user;
     if (!cashCollector) {
-        await session.abortTransaction();
-        return res.status(400).json({ error: "Cash collector details are missing" });
+      await session.abortTransaction();
+      return res
+        .status(400)
+        .json({ error: "Cash collector details are missing" });
     }
 
-    user.balanceLeft -= requestedAmount
-    user.totalCollectedCash += requestedAmount
-    cashCollector.userCollectedCash += requestedAmount
-    cashCollector.balanceLeft += requestedAmount
+    user.balanceLeft -= requestedAmount;
+    user.totalCollectedCash += requestedAmount;
+    cashCollector.userCollectedCash += requestedAmount;
+    cashCollector.balanceLeft += requestedAmount;
     await user.save({ session });
-    await cashCollector.save({ session })
-
+    await cashCollector.save({ session });
 
     const newCashCollection = new cashCollectionsModel({
-        collectedFrom : user._id,
-        collectedBy: cashCollector._id,
-        amount: requestedAmount,
-        comment: comment || '',
-        breakdown: transactionBreakdown
-    })
+      collectedFrom: user._id,
+      collectedBy: cashCollector._id,
+      amount: requestedAmount,
+      comment: comment || "",
+      breakdown: transactionBreakdown,
+    });
 
-
-    await newCashCollection.save({session})
-
+    await newCashCollection.save({ session });
 
     await session.commitTransaction();
-    console.log('Cash collected successfully');
-    res.status(200).json({ messge: 'Cash collected successfully' })
+    res.status(200).json({ messge: "Cash collected successfully" });
   } catch (error) {
+    console.log(error)
     await session.abortTransaction();
-    res.status(500).json({error: 'Internal server error'})
+    res.status(500).json({ error: "Internal server error" });
   } finally {
     session.endSession();
   }

@@ -4,10 +4,11 @@ import userRouterModel from "../models/userRouter.model.js";
 import voucherModel from "../models/voucher.model.js";
 
 export const getUserSales = async (userId) => {
+  console.log(typeof userId)
   const pipeline = [
     {
       $match: {
-        userId: userId,
+        userId,
       },
     },
     {
@@ -27,5 +28,6 @@ export const getUserSales = async (userId) => {
   ];
 
   const userRouters = await userRouterModel.aggregate(pipeline);
+  console.log(userRouters)
   return userRouters || null;
 };

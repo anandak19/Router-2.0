@@ -9,8 +9,9 @@ const router = express.Router()
 
 // get the vouchers under the router 
 router.get("/router/:routerId", validateToken, validateObjectId, varifyRouter, getSalesByRouter);
-
+// for login users 
 router.get("/user", validateToken, totalSalesByUser);
+// to view selected users sales by admin 
 router.get("/user/:id", validateToken, validateObjectId, salesOfGivenUser);
 
 export default router;

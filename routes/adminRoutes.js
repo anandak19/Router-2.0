@@ -20,10 +20,10 @@ router.delete("/users/permission/revoke/:id", validateToken, authenticateAdmin, 
 router.patch("/users/:id/role", validateToken, authenticateAdmin, validateObjectId, changeUserRole)
 
 /// Admin selects a user to view their data 
-router.get("/users/:requestedUserId", validateToken, authenticateAdmin, validateObjectId, getUserDetails) 
+router.get("/users/:requestedUserId", validateToken, authenticateAdmin, validateObjectId, getUserDetails)
 
 // Admin clicks "Add Router" and enters DNS + Port + username
-// Server finds the existing router and links it with the user 
+// Server finds the existing router and links it with the user
 router.post("/users/:requestedUserId/add-router", validateToken, authenticateAdmin, validateObjectId, linkRouterWithUser) 
 
 //deduct balace from user
