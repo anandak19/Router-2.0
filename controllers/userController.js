@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 
 import userModel from "../models/user.model.js";
 import permissionModel from "../models/permission.model.js";
+import cashCollectionsModel from "../models/cashCollections.model.js";
 
 dotenv.config();
 
@@ -38,7 +39,7 @@ export const registerAdmin = async (req, res) => {
 // login user
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
-  console.log(email, password)
+  console.log(email, password);
 
   try {
     const userData = await userModel.findOne({ email });
@@ -61,7 +62,9 @@ export const loginUser = async (req, res) => {
     );
 
     // sending username and token to frontend
-    res.status(200).json({ userName, userID, token, userType: userData.userType });
+    res
+      .status(200)
+      .json({ userName, userID, token, userType: userData.userType });
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -71,7 +74,7 @@ export const loginUser = async (req, res) => {
 // addClient by admin
 export const addClient = async (req, res) => {
   const session = await mongoose.startSession();
-  session.startTransaction(); 
+  session.startTransaction();
   try {
     const { email, phoneNumber, userName, password } = req.body;
 
@@ -80,7 +83,7 @@ export const addClient = async (req, res) => {
       null,
       { session }
     );
-    
+
     if (existingUser) {
       await session.abortTransaction();
       return res.status(409).json({ error: "User already exists" });
@@ -107,10 +110,10 @@ export const addClient = async (req, res) => {
 
     res.status(201).json({ message: "Client user registered successfully" });
   } catch (error) {
-    await session.abortTransaction(); 
+    await session.abortTransaction();
     console.error("Error during registration:", error);
     res.status(500).json({ error: "Internal server error" });
-  }finally {
+  } finally {
     session.endSession();
   }
 };
@@ -118,24 +121,53 @@ export const addClient = async (req, res) => {
 export const getLatestTransaction = async (req, res) => {
   try {
     const user = req.user;
-    if (!user) {
-      return res.status(400).json({error: "User details not found"})
+    if (!user || !user._id) {
+      return res.status(400).json({ error: "User details not found" });
     }
-    /*
-    write the pipeline to get the latest transaction of user
-    match with userId from
-    sort all transactions based on latest transaction first
-    limit only one transaction
-    join the transaction with user collection and get the collector and collectedby users name
-    join with routers collection and find the details of document.brakedown.router
-    fill the details of router on each doc and return the full doc
-    */
-    
+
+    const transactionsPipeline = [
+      {
+        $match: {
+          collectedFrom: user._id,
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      {
+        $limit: 1,
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "collectedBy",
+          foreignField: "_id",
+          as: "collector",
+        },
+      },
+      {
+        $unwind: "$collector",
+      },
+      {
+        $project: {
+          _id: 0,
+          collectorUsername: "$collector.userName",
+          collectorEmail: "$collector.email",
+          collectorPhone: "$collector.phoneNumber",
+          amount: "$amount",
+          comment: "$comment",
+        },
+      },
+    ];
+
+    const latestTransaction = await cashCollectionsModel.aggregate(
+      transactionsPipeline
+    );
+    res.status(200).json(latestTransaction);
   } catch (error) {
     console.error("Error fetching latest transaction:", error);
     res.status(500).json({ error: "Internal server error" });
   }
-}
-
-
-
+};

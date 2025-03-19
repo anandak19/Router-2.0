@@ -16,65 +16,12 @@ returns: totalVouchers and totalSales in amount
 
 // show vouchers sales under the requested router
 export const getSalesByRouter = async (req, res) => {
-  const routerId = req.router._id;
-  const {
-    period,
-    startDate: startDateQuery,
-    endDate: endDateQuery,
-    user: selectedUserId,
-  } = req.query;
-
-  let startDate, endDate;
-
   try {
-    const now = new Date();
-    let selectedPeriod = "All";
-
-    // if custome date range is provided
-    if (startDateQuery && endDateQuery) {
-      selectedPeriod = "custom";
-      startDate = new Date(startDateQuery);
-      endDate = new Date(endDateQuery);
-      endDate.setUTCHours(23, 59, 59, 999);
-    } else if (period) {
-      // if no custom date is prodvided
-      switch (period) {
-        case "day":
-          selectedPeriod = "today";
-          startDate = new Date();
-          startDate.setUTCHours(0, 0, 0, 0);
-          endDate = new Date();
-          endDate.setUTCHours(23, 59, 59, 999);
-          break;
-
-        case "week":
-          selectedPeriod = "This week";
-          startDate = new Date(now.setDate(now.getDate() - now.getDay())); // Start of the week (Sunday)
-          startDate.setUTCHours(0, 0, 0, 0);
-          endDate = new Date(now.setDate(now.getDate() + (6 - now.getDay()))); // End of the week (Saturday)
-          endDate.setUTCHours(23, 59, 59, 999);
-          break;
-
-        case "thisMonth":
-          selectedPeriod = "This month";
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1); // Start of the current month
-          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // End of the current month
-          endDate.setUTCHours(23, 59, 59, 999); // End of the last day of the month
-          break;
-
-        case "lastMonth":
-          selectedPeriod = "Last month";
-          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          endDate = new Date(now.getFullYear(), now.getMonth(), 0);
-          endDate.setUTCHours(23, 59, 59, 999);
-          break;
-
-        default:
-          return res
-            .status(400)
-            .json({ error: "Invalid period parameter or missing date range" });
-      }
-    }
+    const routerId = req.router._id;
+    const startDate = req.startDate;
+    const endDate = req.endDate;
+    const period = req.period;
+    const { user: selectedUserId } = req.query;
 
     const matchStage = { routerId: routerId };
 
@@ -147,12 +94,78 @@ export const getSalesByRouter = async (req, res) => {
     return res.status(200).json({
       message: "Sales data fetched successfully.",
       routerId,
-      period: selectedPeriod,
+      period,
       startDate: startDate ? startDate.toISOString() : null,
       endDate: endDate ? endDate.toISOString() : null,
       totalSales,
       totalVouchers,
       countBrakedown,
+    });
+  } catch (error) {
+    console.error("Error adding voucher:", error);
+    return res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+export const getVoucherHistory = async (req, res) => {
+  try {
+    const routerId = req.router._id;
+    const startDate = req.startDate;
+    const endDate = req.endDate;
+    const period = req.period;
+    const { user: selectedUserId } = req.query;
+
+    const matchStage = { routerId: routerId };
+
+    if (startDate && endDate) {
+      matchStage.createdAt = { $gte: startDate, $lte: endDate };
+    }
+
+    if (selectedUserId) {
+      const user = await userModel.findById(selectedUserId);
+      if (!user) {
+        return res.status(404).json({ error: "Selected user was not found" });
+      }
+      matchStage.userId = user._id;
+    }
+
+    const voucherHistoryPipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "addedUser",
+        },
+      },
+      {
+        $unwind: "$addedUser",
+      },
+      {
+        $project: {
+          couponNumber: 1,
+          profile: 1,
+          count: 1,
+          cost: 1,
+          phoneNumber: 1,
+          createdAt: 1,
+          "addedUser.userName": 1,
+          "addedUser.phoneNumber": 1,
+          "addedUser.email": 1,
+        },
+      },
+      { $sort: { createdAt: -1 } },
+    ];
+
+    const voucherHistory = await voucherModel.aggregate(voucherHistoryPipeline);
+
+    return res.status(200).json({
+      message: "Voucher history fetched successfully",
+      period,
+      startDate: startDate ? startDate.toISOString() : null,
+      endDate: endDate ? endDate.toISOString() : null,
+      voucherHistory,
     });
   } catch (error) {
     console.error("Error adding voucher:", error);
