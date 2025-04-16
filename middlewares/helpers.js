@@ -1,10 +1,12 @@
+import { STATUS_CODES } from "../constants/statusCodes.js";
+import { CustomError } from "../utils/customError.js";
 
 /*
 period params 
 startDate, endDate eg: ?startDate=2024-02-01&endDate=2024-02-10
 day, week, thisMonth, lastMonth  eg: ?period=day
-
 */
+
 
 export const getStartDateEndDate = async (req, res, next) => {
   try {
@@ -67,9 +69,7 @@ export const getStartDateEndDate = async (req, res, next) => {
           break;
 
         default:
-          return res
-            .status(400)
-            .json({ error: "Invalid period parameter or missing date range" });
+          throw new CustomError(  "Invalid period parameter or missing date range", STATUS_CODES.BAD_REQUEST)
       }
     }
 
@@ -79,7 +79,6 @@ export const getStartDateEndDate = async (req, res, next) => {
 
     next()
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal server error." });
+    next(error)
   }
 };

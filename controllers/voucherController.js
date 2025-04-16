@@ -1,11 +1,10 @@
-import routerModel from "../models/router.model.js";
-import userModel from "../models/user.model.js";
 import userRouterModel from "../models/userRouter.model.js";
 import voucherModel from "../models/voucher.model.js";
 import mongoose from "mongoose";
+import { CustomError } from "../utils/customError.js";
+import { STATUS_CODES } from "../constants/statusCodes.js";
 
-export const addVoucher = async (req, res) => {
-
+export const addVoucher = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -16,10 +15,10 @@ export const addVoucher = async (req, res) => {
     const count = Number(req.body.count) || 1;
 
     if (!user || !router) {
-      await session.abortTransaction();
-      return res
-        .status(400)
-        .json({ error: "Missing user or router information." });
+      throw new CustomError(
+        "Missing user or router information.",
+        STATUS_CODES.BAD_REQUEST
+      );
     }
 
     // Check if the user has added this router
@@ -31,10 +30,10 @@ export const addVoucher = async (req, res) => {
       .session(session);
 
     if (!userRouter) {
-      await session.abortTransaction();
-      return res
-        .status(403)
-        .json({ error: "Access denied. You have not added this router yet." });
+      throw new CustomError(
+        "Access denied. You have not added this router yet.",
+        STATUS_CODES.UNAUTHORIZED
+      );
     }
 
     const existingVoucher = await voucherModel
@@ -45,23 +44,23 @@ export const addVoucher = async (req, res) => {
       .session(session);
 
     if (existingVoucher) {
-      await session.abortTransaction();
-      return res
-        .status(409)
-        .json({ error: "You have already added this voucher." });
+      throw new CustomError(
+        "You have already added this voucher.",
+        STATUS_CODES.CONFLICT
+      );
     }
 
     // Validate profile existence in the router
     if (!router.profiles.has(profile)) {
-      await session.abortTransaction();
-      return res
-        .status(404)
-        .json({ error: `Profile '${profile}' not found in the router.` });
+      throw new CustomError(
+        `Profile '${profile}' not found in the router.`,
+        STATUS_CODES.NOT_FOUND
+      );
     }
 
     // Get the profile cost
     const profileCost = router.profiles.get(profile);
-    const cost = profileCost * count
+    const cost = profileCost * count;
 
     // Create a new voucher
     const newVoucher = new voucherModel({
@@ -90,20 +89,19 @@ export const addVoucher = async (req, res) => {
 
     await session.commitTransaction();
 
-    return res.status(201).json({
+    return res.status(STATUS_CODES.CREATED).json({
       message: "Voucher added successfully.",
       voucher: voucherData,
     });
   } catch (error) {
     await session.abortTransaction();
-    console.error("Error adding voucher:", error);
-    return res.status(500).json({ error: "Internal server error." });
+    next(error);
   } finally {
     session.endSession();
   }
 };
 
-export const getVouchersByRouter = async (req, res) => {
+export const getVouchersByRouter = async (req, res, next) => {
   try {
     const routerId = req.router._id;
     const {
@@ -175,9 +173,8 @@ export const getVouchersByRouter = async (req, res) => {
     const vouchers = await voucherModel.aggregate(voucherPipeline);
     console.log("voch", vouchers);
 
-    return res.status(200).json(vouchers);
+    return res.status(STATUS_CODES.SUCCESS).json(vouchers);
   } catch (error) {
-    console.error("Error fetching vouchers:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    next(error);
   }
 };

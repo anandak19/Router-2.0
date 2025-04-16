@@ -16,6 +16,6 @@ router.get("/router/:routerId/vouchers", validateToken, validateObjectId, varify
 // for login users 
 router.get("/user", validateToken, totalSalesByUser);
 // to view selected users sales by admin 
-router.get("/user/:id", validateToken, validateObjectId, salesOfGivenUser);
+router.get("/user/:id", validateToken, validateObjectId, getStartDateEndDate, salesOfGivenUser);
 
 export default router;

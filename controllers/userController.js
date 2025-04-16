@@ -5,11 +5,13 @@ import mongoose from "mongoose";
 import userModel from "../models/user.model.js";
 import permissionModel from "../models/permission.model.js";
 import cashCollectionsModel from "../models/cashCollections.model.js";
+import { CustomError } from "../utils/customError.js";
+import { STATUS_CODES } from "../constants/statusCodes.js";
 
 dotenv.config();
 
 // register new admin
-export const registerAdmin = async (req, res) => {
+export const registerAdmin = async (req, res, next) => {
   const { email, phoneNumber, userName, password } = req.body;
 
   try {
@@ -17,7 +19,7 @@ export const registerAdmin = async (req, res) => {
       $or: [{ email: email }, { userName: userName }],
     });
     if (existingUser) {
-      return res.status(409).json({ error: "User already exists" });
+      throw new CustomError("User already exists", STATUS_CODES.CONFLICT)
     }
 
     const newUser = new userModel({
@@ -29,28 +31,26 @@ export const registerAdmin = async (req, res) => {
     });
 
     await newUser.save();
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(STATUS_CODES.CREATED).json({ message: "User registered successfully" });
   } catch (error) {
-    console.error("Error during registration:", error);
-    res.status(500).json({ error: "Internal server error" });
+    next(error)
   }
 };
 
 // login user
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res, next) => {
   const { email, password } = req.body;
-  console.log(email, password);
 
   try {
     const userData = await userModel.findOne({ email });
     if (!userData) {
-      return res.status(404).json({ error: "User not found" });
+      throw new CustomError("User not found", STATUS_CODES.NOT_FOUND)
     }
 
     // check password
     const isMatch = password === userData.password;
     if (!isMatch) {
-      return res.status(401).json({ error: "Invalid password" });
+      throw new CustomError( "Invalid password", STATUS_CODES.BAD_REQUEST)
     }
 
     // create a token
@@ -63,16 +63,15 @@ export const loginUser = async (req, res) => {
 
     // sending username and token to frontend
     res
-      .status(200)
+      .status(STATUS_CODES.SUCCESS)
       .json({ userName, userID, token, userType: userData.userType });
   } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).json({ error: "Internal server error" });
+    next(error)
   }
 };
 
 // addClient by admin
-export const addClient = async (req, res) => {
+export const addClient = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -85,8 +84,7 @@ export const addClient = async (req, res) => {
     );
 
     if (existingUser) {
-      await session.abortTransaction();
-      return res.status(409).json({ error: "User already exists" });
+      throw new CustomError( "User already exists", STATUS_CODES.CONFLICT)
     }
 
     const newUser = new userModel({
@@ -108,21 +106,20 @@ export const addClient = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    res.status(201).json({ message: "Client user registered successfully" });
+    res.status(STATUS_CODES.CREATED).json({ message: "Client user registered successfully" });
   } catch (error) {
     await session.abortTransaction();
-    console.error("Error during registration:", error);
-    res.status(500).json({ error: "Internal server error" });
+    next(error)
   } finally {
     session.endSession();
   }
 };
 
-export const getLatestTransaction = async (req, res) => {
+export const getLatestTransaction = async (req, res,next) => {
   try {
     const user = req.user;
     if (!user || !user._id) {
-      return res.status(400).json({ error: "User details not found" });
+      throw new CustomError( "User details not found", STATUS_CODES.NOT_FOUND)
     }
 
     const transactionsPipeline = [
@@ -165,9 +162,8 @@ export const getLatestTransaction = async (req, res) => {
     const latestTransaction = await cashCollectionsModel.aggregate(
       transactionsPipeline
     );
-    res.status(200).json(latestTransaction);
+    res.status(STATUS_CODES.SUCCESS).json(latestTransaction);
   } catch (error) {
-    console.error("Error fetching latest transaction:", error);
-    res.status(500).json({ error: "Internal server error" });
+    next(error)
   }
 };

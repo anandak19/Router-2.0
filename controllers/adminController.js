@@ -3,7 +3,10 @@ import routerModel from "../models/router.model.js";
 import userModel from "../models/user.model.js";
 import userRouterModel from "../models/userRouter.model.js";
 
-export const getAddedUsers = async (req, res) => {
+import { STATUS_CODES } from "../constants/statusCodes.js";
+import { CustomError } from "../utils/customError.js";
+
+export const getAddedUsers = async (req, res, next) => {
   try {
     const { _id: userId } = req.user;
 
@@ -30,32 +33,35 @@ export const getAddedUsers = async (req, res) => {
       },
     ]);
 
-    return res.status(200).json({ success: true, users });
+    return res.status(STATUS_CODES.SUCCESS).json({ success: true, users });
   } catch (error) {
-    console.error("Error fetching added users:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    next(error);
   }
 };
 
-export const grantViewPermission = async (req, res) => {
+export const grantViewPermission = async (req, res, next) => {
   try {
     const { _id: userId } = req.user;
     const { userName } = req.body;
 
     if (!userName) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Please provide a username" });
+      throw new CustomError(
+        "Please provide a username",
+        STATUS_CODES.BAD_REQUEST
+      );
     }
 
     const user = await userModel.findOne({ userName });
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found, try another username",
-      });
+      throw new CustomError(
+        "User not found, try another username",
+        STATUS_CODES.NOT_FOUND
+      );
+    }
+
+    const existingPermission = await permissionModel.findOne({viewer: userId, canView: user._id,})
+    if(existingPermission) {
+      throw new CustomError( "User is already added to your list", STATUS_CODES.CONFLICT)
     }
 
     const newPermission = new permissionModel({
@@ -64,72 +70,68 @@ export const grantViewPermission = async (req, res) => {
     });
     await newPermission.save();
 
-    return res.status(200).json({ success: true, message: "User added to your list" });
-  } catch (error) {
-    console.error("Error granting view access:", error);
     return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+      .status(STATUS_CODES.SUCCESS)
+      .json({ success: true, message: "User added to your list" });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const revokeViewPermission = async (req, res) => {
+export const revokeViewPermission = async (req, res, next) => {
   try {
     const { _id: userId } = req.user;
     const selectedUserId = req.params.id;
 
     if (!selectedUserId) {
-      return res.status(400).json({ error: "User ID is required" });
+      throw new CustomError("User ID is required", STATUS_CODES.BAD_REQUEST);
     }
 
-    const selectedUser = await userModel.findById(selectedUserId)
+    const selectedUser = await userModel.findById(selectedUserId);
 
     if (!selectedUser) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      throw new CustomError("User not found", STATUS_CODES.NOT_FOUND);
     }
 
     const result = await permissionModel.deleteOne({
       viewer: userId,
-      canView: selectedUser._id
+      canView: selectedUser._id,
     });
 
     if (result.deletedCount === 0) {
-      return res
-      .status(400)
-      .json({ success: false, message: "Failed to remove user from your list" });
+      throw new CustomError(
+        "Already deleted from list",
+        STATUS_CODES.INTERNAL_SERVER_ERROR
+      );
     }
 
-    return res.status(200).json({ success: true, message: "User removed from your list" });
-
-  } catch (error) {
-    console.error("Error revoking view access:", error);
     return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+      .status(STATUS_CODES.SUCCESS)
+      .json({ success: true, message: "User removed from your list" });
+  } catch (error) {
+    next(error);
   }
 };
 
-
-export const changeUserRole = async (req, res) => {
+export const changeUserRole = async (req, res, next) => {
   try {
     const userId = req.params.id;
 
     if (!userId) {
-      return res.status(400).json({ error: "User ID is required" });
+      throw new CustomError("User ID is required", STATUS_CODES.BAD_REQUEST);
     }
 
     const user = await userModel.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      throw new CustomError("User not found", STATUS_CODES.NOT_FOUND);
     }
 
     if (!user.userType) {
-      return res
-        .status(400)
-        .json({ error: "User type is missing in user data" });
+      throw new CustomError(
+        "User type is missing in user data",
+        STATUS_CODES.BAD_REQUEST
+      );
     }
 
     user.userType = user.userType === "client" ? "admin" : "client";
@@ -137,66 +139,54 @@ export const changeUserRole = async (req, res) => {
     await user.save();
 
     res
-      .status(200)
+      .status(STATUS_CODES.SUCCESS)
       .json({ message: `User role updated to ${user.userType} successfully` });
   } catch (error) {
-    console.log(error);
-    res.status(200).json({ error: "Internal server error" });
+    next(error);
   }
 };
 
-export const getUserDetails = async (req, res) => {
+export const getUserDetails = async (req, res, next) => {
   try {
     const { requestedUserId } = req.params;
 
     if (!requestedUserId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User ID is required" });
+      throw new CustomError("User ID is required", STATUS_CODES.BAD_REQUEST);
     }
 
     const user = await userModel.findById(requestedUserId);
 
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      throw new CustomError("User not found", STATUS_CODES.NOT_FOUND);
     }
 
-    return res.status(200).json({ success: true, user });
+    return res.status(STATUS_CODES.SUCCESS).json({ success: true, user });
   } catch (error) {
-    console.error("Error fetching users details:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    next(error);
   }
 };
 
 // add/link routers with user
-export const linkRouterWithUser = async (req, res) => {
+export const linkRouterWithUser = async (req, res, next) => {
   try {
     const { requestedUserId } = req.params;
     const { dns, port, username, hotspot } = req.body;
 
     if (!requestedUserId || !dns || !port || !username || !hotspot) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing required fields" });
+      throw new CustomError(
+        "Missing required fields",
+        STATUS_CODES.BAD_REQUEST
+      );
     }
 
     const user = await userModel.findById(requestedUserId);
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      throw new CustomError("User not found", STATUS_CODES.NOT_FOUND);
     }
 
     const router = await routerModel.findOne({ dns, port, userName: username });
-    console.log(router);
     if (!router) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Router not found" });
+      throw new CustomError("Router not found", STATUS_CODES.NOT_FOUND);
     }
 
     const existingLink = await userRouterModel.findOne({
@@ -204,10 +194,10 @@ export const linkRouterWithUser = async (req, res) => {
       routerId: router._id,
     });
     if (existingLink) {
-      return res.status(400).json({
-        success: false,
-        message: "Router already linked to this user",
-      });
+      throw new CustomError(
+        "Router already linked to this user",
+        STATUS_CODES.BAD_REQUEST
+      );
     }
 
     const newUserRouter = new userRouterModel({
@@ -219,12 +209,9 @@ export const linkRouterWithUser = async (req, res) => {
     await newUserRouter.save();
 
     return res
-      .status(200)
+      .status(STATUS_CODES.SUCCESS)
       .json({ success: true, message: "Router linked to user successfully" });
   } catch (error) {
-    console.error("Error linking router to user:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    next(error)
   }
 };

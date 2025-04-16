@@ -3,7 +3,10 @@ import userModel from "../models/user.model.js";
 import userRouterModel from "../models/userRouter.model.js";
 import cashCollectionsModel from "../models/cashCollections.model.js";
 
-export const deductUserBalace = async (req, res) => {
+import { CustomError } from "../utils/customError.js";
+import { STATUS_CODES } from "../constants/statusCodes.js";
+
+export const deductUserBalace = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -12,28 +15,32 @@ export const deductUserBalace = async (req, res) => {
     const requestedAmount = parseInt(amount);
 
     if (!requestedAmount || requestedAmount <= 0) {
-      return res.status(400).json({ error: "Enter a valid amount to collect" });
+      throw new CustomError(
+        "Enter a valid amount to collect",
+        STATUS_CODES.BAD_REQUEST
+      );
     }
 
     if (!userId) {
-      return res
-        .status(400)
-        .json({ error: "Choose a user to collect cash from" });
+      throw new CustomError(
+        "Choose a user to collect cash from",
+        STATUS_CODES.BAD_REQUEST
+      );
     }
 
     const user = await userModel.findById(userId);
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      throw new CustomError("User not found", STATUS_CODES.NOT_FOUND);
     }
 
     if (user.balanceLeft < requestedAmount) {
-      return res
-        .status(400)
-        .json({ error: "Insufficient balace for user! Enter a valid amount" });
+      throw new CustomError(
+        "Insufficient balace for user! Enter a valid amount",
+        STATUS_CODES.CONFLICT
+      );
     }
 
     let remainingAmount = requestedAmount;
-
 
     // if the userCollectedCash has cash in it deduct from that first
     if (user.userCollectedCash > 0) {
@@ -51,9 +58,10 @@ export const deductUserBalace = async (req, res) => {
         .session(session);
 
       if (!userRouters) {
-        return res
-          .status(400)
-          .json({ error: "No routers found for user with balace" });
+        throw new CustomError(
+          "No routers found for user with balace",
+          STATUS_CODES.CONFLICT
+        );
       }
 
       for (const router of userRouters) {
@@ -77,20 +85,12 @@ export const deductUserBalace = async (req, res) => {
 
     //   still cash left to collect
     if (remainingAmount > 0) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Insufficient balance across routers to collect the full amount",
-        });
+      throw new CustomError( "Insufficient balance across routers to collect the full amount" , STATUS_CODES.BAD_REQUEST)
     }
 
     const cashCollector = req.user;
     if (!cashCollector) {
-      await session.abortTransaction();
-      return res
-        .status(400)
-        .json({ error: "Cash collector details are missing" });
+      throw new CustomError(  "Cash collector details are missing", STATUS_CODES.BAD_REQUEST)
     }
 
     user.balanceLeft -= requestedAmount;
@@ -111,11 +111,10 @@ export const deductUserBalace = async (req, res) => {
     await newCashCollection.save({ session });
 
     await session.commitTransaction();
-    res.status(200).json({ messge: "Cash collected successfully" });
+    res.status(STATUS_CODES.SUCCESS).json({ messge: "Cash collected successfully" });
   } catch (error) {
-    console.log(error)
     await session.abortTransaction();
-    res.status(500).json({ error: "Internal server error" });
+    next(error)
   } finally {
     session.endSession();
   }

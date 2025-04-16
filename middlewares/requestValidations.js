@@ -1,21 +1,31 @@
 import mongoose from "mongoose";
+import { CustomError } from "../utils/customError.js";
+import { STATUS_CODES } from "../constants/statusCodes.js";
 
 export const validateObjectId = (req, res, next) => {
+  try {
     const { id, requestedUserId, routerId } = req.params;
 
     if (id && !mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({ error: "Invalid user ID format" });
+      throw new CustomError("Invalid user ID format", STATUS_CODES.BAD_REQUEST);
     }
 
     if (requestedUserId && !mongoose.Types.ObjectId.isValid(requestedUserId)) {
-        return res.status(400).json({ error: "Invalid requested user ID format" });
+      throw new CustomError(
+        "Invalid requested user ID format",
+        STATUS_CODES.BAD_REQUEST
+      );
     }
 
     if (routerId && !mongoose.Types.ObjectId.isValid(routerId)) {
-        return res.status(400).json({ error: "Invalid requested router ID format" });
+      throw new CustomError(
+        "Invalid requested router ID format",
+        STATUS_CODES.BAD_REQUEST
+      );
     }
-    
 
-    next(); 
+    next();
+  } catch (error) {
+    next(error);
+  }
 };
-

@@ -1,18 +1,19 @@
 import routerModel from "../models/router.model.js";
 import mongoose from "mongoose";
+import { CustomError } from "../utils/customError.js";
+import { STATUS_CODES } from "../constants/statusCodes.js";
 
 export const validateNewRouterData = (req, res, next) => {
   try {
     const { dns, port, userName, password, hotspot, deviceName } = req.body;
 
     if (!dns || !port || !userName || !password || !hotspot || !deviceName) {
-      return res.status(400).json({ error: "All fields are required." });
+      throw new CustomError( "All fields are required." , STATUS_CODES.BAD_REQUEST)
     }
 
     next();
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal server error." });
+    next(error)
   }
 };
 
@@ -21,24 +22,23 @@ export const varifyRouter = async (req, res, next) => {
     const { routerId } = req.params;
 
     if (!routerId) {
-      return res.status(404).json({ message: "Please provide router" });
+      throw new CustomError(  "Please provide router", STATUS_CODES.BAD_REQUEST)
     }
 
     if (!mongoose.Types.ObjectId.isValid(routerId)) {
-      return res.status(400).json({ message: "Invalid router ID format. Must be a 24-character hex string." });
+      throw new CustomError( "Invalid router ID format. Must be a 24-character hex string." , STATUS_CODES.BAD_REQUEST)
     }
 
     const router = await routerModel.findById(routerId);
     if (!router) {
-      return res.status(404).json({ message: "Router not found" });
+      throw new CustomError( "Router not found" , STATUS_CODES.NOT_FOUND)
     }
 
     req.router = router;
     next();
 
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal server error." });
+    next(error)
   }
 };
 
@@ -48,11 +48,11 @@ export const validateNewVocherData = (req, res, next) => {
     const count = Number(req.body.count); 
 
     if (count && isNaN(count) && count <= 0) {
-      return res.status(400).json({ error: "Count should be a positive number" });
+      throw new CustomError( "Count should be a positive number" , STATUS_CODES.BAD_REQUEST)
     }
 
     if (!count && !couponNumber) {
-      return res.status(400).json({ error: "Coupon number is needed since no count is provided" });
+      throw new CustomError( "Coupon number is needed since no count is provided" , STATUS_CODES.BAD_REQUEST)
     }
 
     const profileRegex = /^(?:[1-9]|[12][0-9]|30)-D$/;
@@ -61,24 +61,18 @@ export const validateNewVocherData = (req, res, next) => {
       typeof profile !== "string" ||
       !profileRegex.test(profile)
     ) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Invalid profile. It must be in the format 'X-D' where X is between 1 and 30.",
-        });
+      throw new CustomError( "Invalid profile. It must be in the format 'X-D' where X is between 1 and 30." , STATUS_CODES.BAD_REQUEST)
     }
 
     if (phoneNumber) {
       const phoneRegex = /^\+?\d{7,15}$/;
       if (!phoneRegex.test(phoneNumber)) {
-        return res.status(400).json({ error: "Invalid phone number" });
+        throw new CustomError( "Invalid phone number" , STATUS_CODES.BAD_REQUEST)
       }
     }
 
     next();
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal server error." });
+    next(error)
   }
 };

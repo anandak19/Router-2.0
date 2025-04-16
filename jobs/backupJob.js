@@ -1,9 +1,10 @@
 import dotenv from "dotenv";
 import path from "path";
 import cron from "node-cron";
-import { exec } from "child_process";
 import fs from "fs";
+import { exec } from "child_process";
 import { promisify } from "util";
+
 dotenv.config();
 
 const DATABASE_NAME = process.env.DATABASE_NAME;

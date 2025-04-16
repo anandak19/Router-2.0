@@ -1,9 +1,9 @@
-import routerModel from "../models/router.model.js";
 import userModel from "../models/user.model.js";
-import userRouterModel from "../models/userRouter.model.js";
 import voucherModel from "../models/voucher.model.js";
 
 import { getUserSales } from "../utils/userSales.js";
+import { STATUS_CODES } from "../constants/statusCodes.js";
+import { CustomError } from "../utils/customError.js";
 
 /*
 period params 
@@ -15,7 +15,7 @@ returns: totalVouchers and totalSales in amount
 */
 
 // show vouchers sales under the requested router
-export const getSalesByRouter = async (req, res) => {
+export const getSalesByRouter = async (req, res, next) => {
   try {
     const routerId = req.router._id;
     const startDate = req.startDate;
@@ -32,7 +32,10 @@ export const getSalesByRouter = async (req, res) => {
     if (selectedUserId) {
       const user = await userModel.findById(selectedUserId);
       if (!user) {
-        return res.status(404).json({ error: "Selected user was not found" });
+        throw new CustomError(
+          "Selected user was not found",
+          STATUS_CODES.NOT_FOUND
+        );
       }
       matchStage.userId = user._id;
     }
@@ -91,7 +94,7 @@ export const getSalesByRouter = async (req, res) => {
     const countBrakedown =
       salesData[0].countBrakedown.length > 0 ? salesData[0].countBrakedown : [];
 
-    return res.status(200).json({
+    return res.status(STATUS_CODES.SUCCESS).json({
       message: "Sales data fetched successfully.",
       routerId,
       period,
@@ -102,12 +105,11 @@ export const getSalesByRouter = async (req, res) => {
       countBrakedown,
     });
   } catch (error) {
-    console.error("Error adding voucher:", error);
-    return res.status(500).json({ error: "Internal server error." });
+    next(error);
   }
 };
 
-export const getVoucherHistory = async (req, res) => {
+export const getVoucherHistory = async (req, res, next) => {
   try {
     const routerId = req.router._id;
     const startDate = req.startDate;
@@ -124,7 +126,10 @@ export const getVoucherHistory = async (req, res) => {
     if (selectedUserId) {
       const user = await userModel.findById(selectedUserId);
       if (!user) {
-        return res.status(404).json({ error: "Selected user was not found" });
+        throw new CustomError(
+          "Selected user was not found",
+          STATUS_CODES.NOT_FOUND
+        );
       }
       matchStage.userId = user._id;
     }
@@ -160,7 +165,7 @@ export const getVoucherHistory = async (req, res) => {
 
     const voucherHistory = await voucherModel.aggregate(voucherHistoryPipeline);
 
-    return res.status(200).json({
+    return res.status(STATUS_CODES.SUCCESS).json({
       message: "Voucher history fetched successfully",
       period,
       startDate: startDate ? startDate.toISOString() : null,
@@ -168,8 +173,7 @@ export const getVoucherHistory = async (req, res) => {
       voucherHistory,
     });
   } catch (error) {
-    console.error("Error adding voucher:", error);
-    return res.status(500).json({ error: "Internal server error." });
+    next(error);
   }
 };
 
@@ -179,27 +183,33 @@ export const totalSalesByUser = async (req, res, next) => {
     const user = req.user;
 
     if (!user) {
-      return res.status(401).json({ message: "User not authenticated" });
+      throw new CustomError(
+        "User not authenticated",
+        STATUS_CODES.UNAUTHORIZED
+      );
     }
 
     if (!user._id) {
-      return res.status(400).json({ message: "User ID is missing or invalid" });
+      throw new CustomError(
+        "User ID is missing or invalid",
+        STATUS_CODES.BAD_REQUEST
+      );
     }
 
     const salesData = await getUserSales(user._id);
     if (!salesData) {
-      return res
-        .status(404)
-        .json({ message: "No sales data found for this user" });
+      throw new CustomError(
+        "No sales data found for this user",
+        STATUS_CODES.NOT_FOUND
+      );
     }
 
-    res.status(200).json({
+    res.status(STATUS_CODES.SUCCESS).json({
       message: "Sales data retrieved successfully",
       routerSales: salesData,
       totalBalance: user.balanceLeft,
     });
   } catch (error) {
-    console.log(error);
     next(error);
   }
 };
@@ -207,33 +217,56 @@ export const totalSalesByUser = async (req, res, next) => {
 // total sales of given user , in each router and total
 export const salesOfGivenUser = async (req, res, next) => {
   try {
+    const startDate = req.startDate;
+    const endDate = req.endDate;
+    const period = req.period;
+
     const userId = req.params.id;
 
     if (!userId) {
-      return res.status(400).json({ message: "User ID is required" });
+      throw new CustomError( "User ID is required"  , STATUS_CODES.BAD_REQUEST)
     }
 
     const user = await userModel.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      throw new CustomError(  "User not found", STATUS_CODES.NOT_FOUND)
     }
 
-    const salesData = await getUserSales(user._id);
+    const matchStage = { userId: user._id };
 
-    if (!salesData) {
-      return res
-        .status(404)
-        .json({ message: "No sales data found for this user" });
+    if (startDate && endDate) {
+      matchStage.createdAt = { $gte: startDate, $lte: endDate };
     }
 
-    res.status(200).json({
+    const userSalesPipeline = [
+      { $match: matchStage },
+      {
+        $group: {
+          _id: null,
+          totalSale: { $sum: "$cost" },
+          totalVouchers: { $sum: "$count" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalSale: 1,
+          totalVouchers: 1,
+        },
+      },
+    ];
+
+    const userSales = await voucherModel.aggregate(userSalesPipeline);
+
+    res.status(STATUS_CODES.SUCCESS).json({
       message: "User sales data retrieved successfully",
-      currentBalance: user.balanceLeft,
-      routerSales: salesData,
+      period,
+      startDate: startDate ? startDate.toISOString() : null,
+      endDate: endDate ? endDate.toISOString() : null,
+      totalUserSales: userSales[0] || { totalSale: 0, totalVouchers: 0 },
     });
   } catch (error) {
-    console.log(error);
     next(error);
   }
 };
