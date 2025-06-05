@@ -1,0 +1,54 @@
+import mongoose from "mongoose";
+import counterModel from "./counter.model.js";
+
+const expenseSchema = new mongoose.Schema(
+  {
+    slNo: { type: String, required: true },
+    date: { type: Date, required: true },
+    routerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Router" }],
+    selectAll: { type: Boolean, default: false },
+    amount: { type: Number, required: true },
+    split: { type: Boolean, required: true },
+    splitAmount: { type: Number, default: 0 },
+    applyIndividually: { type: Boolean, default: true }
+  },
+  {
+    timestamps: true
+  }
+);
+
+expenseSchema.pre("validate", function (next) {
+  if (this.split && this.applyIndividually) {
+    return next(new Error("Both 'split' and 'applyIndividually' cannot be true at the same time."));
+  }
+
+  if (!this.split && !this.applyIndividually) {
+    return next(new Error("Either 'split' or 'applyIndividually' must be true."));
+  }
+
+  if (this.split && (!this.splitAmount || this.splitAmount <= 0)) {
+    return next(new Error("'splitAmount' must be greater than 0 when 'split' is true."));
+  }
+
+  if (this.selectAll && this.routerIds && this.routerIds.length > 0) {
+    return next(new Error("'routerIds' must be empty when 'selectAll' is true."));
+  }
+
+  next();
+});
+
+expenseSchema.pre("save", async function (next) {
+  if (this.isNew) {
+    const counter = await counterModel.findOneAndUpdate(
+      { collectionName: "expense" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+
+    this.slNo = String(counter.seq).padStart(6, "0");
+  }
+
+  next();
+});
+
+export default mongoose.model("Expense", expenseSchema);

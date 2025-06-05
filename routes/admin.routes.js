@@ -29,4 +29,7 @@ router.post("/users/:requestedUserId/add-router", validateToken, authenticateAdm
 //deduct balace from user
 router.patch("/users/cash/collect", validateToken, authenticateAdmin, deductUserBalace)
 
+//send cash to clint
+router.patch("/users/cash/send", validateToken, authenticateAdmin, deductUserBalace)
+
 export default router;

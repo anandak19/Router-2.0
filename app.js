@@ -1,8 +1,8 @@
 import express from "express";
-import userRoutes from "./routes/userRoutes.js";
-import routerRoute from "./routes/routerRoute.js";
-import salesRoutes from "./routes/salesRoutes.js";
-import adminRoutes from "./routes/adminRoutes.js";
+import userRoutes from "./routes/user.routes.js";
+import routerRoute from "./routes/router.routes.js";
+import salesRoutes from "./routes/sales.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import errorHandler from "./middlewares/errorHandler.js"
 import cors from "cors";
 
