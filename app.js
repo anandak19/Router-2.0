@@ -1,10 +1,12 @@
 import express from "express";
+import errorHandler from "./middlewares/errorHandler.js"
+import cors from "cors";
 import userRoutes from "./routes/user.routes.js";
 import routerRoute from "./routes/router.routes.js";
 import salesRoutes from "./routes/sales.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
-import errorHandler from "./middlewares/errorHandler.js"
-import cors from "cors";
+import expenseRoutes from "./routes/expense.routes.js";
+
 
 export const app = express();
 app.use(cors());
@@ -16,6 +18,7 @@ app.get("/", (req, res) => {
 
 app.use("/api", userRoutes);
 app.use("/api", routerRoute);
+app.use("/api", expenseRoutes)
 app.use("/api/sales", salesRoutes)
 app.use("/api/admin", adminRoutes)
 

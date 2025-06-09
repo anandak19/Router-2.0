@@ -2,6 +2,8 @@
 
 export const addNewExpense = (req, res, next) => {
     // logic to add new expense
+    console.log("Validatations passed, Data: ", req.body)
+    res.json("Reached add expense")
 }
 
 export const getAllExpense = (req, res, next) =>{
