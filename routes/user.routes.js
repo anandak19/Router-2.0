@@ -4,10 +4,10 @@ import { authenticateAdmin, validateInputs, validateToken } from "../middlewares
 
 const router = express.Router()
 
-router.post("/user/register/admin", validateInputs, registerAdmin)
-router.post("/user/register", validateToken, authenticateAdmin, validateInputs, addClient)
-router.post("/user/login", loginUser)
+router.post("/register/admin", validateInputs, registerAdmin)
+router.post("/register", validateToken, authenticateAdmin, validateInputs, addClient)
+router.post("/login", loginUser)
 // get the last transaction / cash collection made on user 
-router.get("/user/transactions/latest", validateToken, getLatestTransaction)
+router.get("/transactions/latest", validateToken, getLatestTransaction)
 
 export default router;

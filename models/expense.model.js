@@ -3,14 +3,18 @@ import counterModel from "./counter.model.js";
 
 const expenseSchema = new mongoose.Schema(
   {
-    slNo: { type: String, required: true },
+    slNo: { type: String, unique: true },
+    expenseCategory: {type: String, required: true},
     date: { type: Date, required: true },
     routerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Router" }],
     isSelectAll: { type: Boolean, default: false },
     amount: { type: Number, required: true },
     isSplit: { type: Boolean, required: true },
     splitAmount: { type: Number, default: 0 },
-    isApplyIndividually: { type: Boolean, default: true }
+    isApplyIndividually: { type: Boolean, default: true },
+    description: {type: String, default: ''},
+    person: {type: String, default: ''},
+    profession: {type: String, default: ''},
   },
   {
     timestamps: true

@@ -7,12 +7,12 @@ import { validateObjectId } from "../middlewares/requestValidations.js";
 
 const router = express.Router()
 
-router.get("/router", validateToken, getUserRouters)
-router.post("/router/add-router", validateToken, authenticateAdmin, validateNewRouterData, addRouter)
-// router.delete("/router/:routerId", deleteOneRouter)
-router.post("/router/voucher/:routerId", validateToken, validateObjectId, varifyRouter, validateNewVocherData, addVoucher)
-// router.delete('/router/delete-voucher/:routerId/:voucherId', deleteVoucherFromRouter);
+router.get("/", validateToken, getUserRouters)
+router.post("/add-router", validateToken, authenticateAdmin, validateNewRouterData, addRouter)
+// router.delete("/:routerId", deleteOneRouter)
+router.post("/voucher/:routerId", validateToken, validateObjectId, varifyRouter, validateNewVocherData, addVoucher)
+// router.delete('/delete-voucher/:routerId/:voucherId', deleteVoucherFromRouter);
 
-router.get("/router/voucher/:routerId", validateToken, validateObjectId, varifyRouter, getVouchersByRouter)
+router.get("/voucher/:routerId", validateToken, validateObjectId, varifyRouter, getVouchersByRouter)
 
 export default router;

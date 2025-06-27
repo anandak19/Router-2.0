@@ -6,11 +6,17 @@ export const validateNewExpenseData = async (req, _res, next) => {
   try {
     const {
       date,
+      expenseCategory,
       routerIds,
       isSelectAll,
       isSplit,
       isApplyIndividually,
-      amount: rawAmount
+      amount: rawAmount,
+      // optional fields
+      description,
+      invoiceNumber,
+      person,
+      profession,
     } = req.body;
 
     const amount = Number(rawAmount);
@@ -21,7 +27,11 @@ export const validateNewExpenseData = async (req, _res, next) => {
       throw new CustomError("Date is required", STATUS_CODES.BAD_REQUEST);
     }
 
-    // await validateRouterIds(routerIds) 
+    if (!expenseCategory) {
+      throw new CustomError("Expense category is required", STATUS_CODES.BAD_REQUEST);
+    }
+
+    // await validateRouterIds(routerIds)
 
     if (isNullOrUndefined(isSelectAll)) {
       throw new CustomError(
@@ -51,9 +61,22 @@ export const validateNewExpenseData = async (req, _res, next) => {
       );
     }
 
+    req.expenseData = {
+      date,
+      expenseCategory,
+      routerIds,
+      isSelectAll,
+      isSplit,
+      isApplyIndividually,
+      amount,
+      description,
+      invoiceNumber,
+      person,
+      profession,
+    };
+
     next();
   } catch (error) {
     next(error);
   }
 };
-
