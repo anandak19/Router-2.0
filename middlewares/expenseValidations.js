@@ -31,7 +31,7 @@ export const validateNewExpenseData = async (req, _res, next) => {
       throw new CustomError("Expense category is required", STATUS_CODES.BAD_REQUEST);
     }
 
-    // await validateRouterIds(routerIds)
+    await validateRouterIds(routerIds)
 
     if (isNullOrUndefined(isSelectAll)) {
       throw new CustomError(
