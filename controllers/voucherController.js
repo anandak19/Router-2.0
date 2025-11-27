@@ -157,6 +157,7 @@ export const getVouchersByRouter = async (req, res, next) => {
         routerId: 1,
         profile: 1,
         cost: 1,
+        count: 1,
         createdAt: 1,
         couponNumber: 1,
         phoneNumber: 1,

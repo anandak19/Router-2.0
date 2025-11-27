@@ -8,8 +8,8 @@ import { getStartDateEndDate } from "../middlewares/helpers.js";
 const router = express.Router()
 
 
-// get the vouchers under the router 
-router.get("/router/:routerId", validateToken, validateObjectId, varifyRouter, getStartDateEndDate, getSalesByRouter);
+// get the vouchers under the router // validateToken,
+router.get("/router/:routerId",  validateObjectId, varifyRouter, getStartDateEndDate, getSalesByRouter);
 
 // get vouchers history on router 
 router.get("/router/:routerId/vouchers", validateToken, validateObjectId, varifyRouter, getStartDateEndDate, getVoucherHistory);

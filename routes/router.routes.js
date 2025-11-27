@@ -13,6 +13,6 @@ router.post("/add-router", validateToken, authenticateAdmin, validateNewRouterDa
 router.post("/voucher/:routerId", validateToken, validateObjectId, varifyRouter, validateNewVocherData, addVoucher)
 // router.delete('/delete-voucher/:routerId/:voucherId', deleteVoucherFromRouter);
 
-router.get("/voucher/:routerId", validateToken, validateObjectId, varifyRouter, getVouchersByRouter)
+router.get("/voucher/:routerId",  validateObjectId, varifyRouter, getVouchersByRouter) //validateToken,
 
 export default router;

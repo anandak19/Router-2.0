@@ -62,7 +62,7 @@ export const getSalesByRouter = async (req, res, next) => {
             {
               $group: {
                 _id: "$profile",
-                count: { $sum: 1 },
+                count: { $sum: "$count" },
                 subTotalSales: { $sum: "$cost" },
               },
             },

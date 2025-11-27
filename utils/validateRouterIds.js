@@ -5,7 +5,10 @@ import { STATUS_CODES } from "../constants/statusCodes.js";
 
 export const validateRouterIds = async (routerIds = []) => {
   if (!Array.isArray(routerIds) || routerIds.length === 0) {
-    throw new CustomError("Router IDs must be a non-empty array", STATUS_CODES.BAD_REQUEST);
+    throw new CustomError(
+      "Router IDs must be a non-empty array",
+      STATUS_CODES.BAD_REQUEST
+    );
   }
 
   // Check if all are valid ObjectIds
@@ -13,7 +16,10 @@ export const validateRouterIds = async (routerIds = []) => {
     (id) => !mongoose.Types.ObjectId.isValid(id)
   );
   if (invalidIds.length > 0) {
-    throw new CustomError(`Invalid router ID(s): ${invalidIds.join(", ")}`, STATUS_CODES.BAD_REQUEST);
+    throw new CustomError(
+      `Invalid router ID(s): ${invalidIds.join(", ")}`,
+      STATUS_CODES.BAD_REQUEST
+    );
   }
 
   // Check if each ID exists in DB
@@ -26,7 +32,10 @@ export const validateRouterIds = async (routerIds = []) => {
   const missingIds = routerIds.filter((id) => !existingIdSet.has(id));
 
   if (missingIds.length > 0) {
-    throw new CustomError(`Router ID(s) not found: ${missingIds.join(", ")}`, STATUS_CODES.BAD_REQUEST);
+    throw new CustomError(
+      `Router ID(s) not found: ${missingIds.join(", ")}`,
+      STATUS_CODES.BAD_REQUEST
+    );
   }
 
   return true;
