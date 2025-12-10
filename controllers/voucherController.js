@@ -172,7 +172,6 @@ export const getVouchersByRouter = async (req, res, next) => {
     });
 
     const vouchers = await voucherModel.aggregate(voucherPipeline);
-    console.log("voch", vouchers);
 
     return res.status(STATUS_CODES.SUCCESS).json(vouchers);
   } catch (error) {

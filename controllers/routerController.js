@@ -53,10 +53,12 @@ export const addRouter = async (req, res, next) => {
 
     await session.commitTransaction();
 
-    return res.status(STATUS_CODES.CREATED).json({ message: "Router added successfully" });
+    return res
+      .status(STATUS_CODES.CREATED)
+      .json({ message: "Router added successfully" });
   } catch (error) {
     await session.abortTransaction();
-    next(error)
+    next(error);
   } finally {
     session.endSession();
   }
@@ -89,6 +91,7 @@ export const getUserRouters = async (req, res, next) => {
       {
         $project: {
           _id: 0,
+          id: "$_id",
           router: "$routerDetails",
         },
       },
@@ -96,7 +99,39 @@ export const getUserRouters = async (req, res, next) => {
 
     return res.status(STATUS_CODES.SUCCESS).json(routers);
   } catch (error) {
-    next(error)
+    next(error);
+  }
+};
+
+// get router cash of selected router on user router collection
+export const getOneUserRouterCash = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const router = req.router;
+
+    const [routerData] = await userRouterModel.aggregate([
+      {
+        $match: { userId: user._id, routerId: router._id },
+      },
+      {
+        $project: {
+          _id: 0,
+          id: "$_id",
+          hotspot: 1,
+          totalSalesByUserInRouter: 1,
+          totalCollectedCash: 1,
+          balanceLeftInRouter: 1,
+        },
+      },
+    ]);
+
+    if (!routerData) {
+      throw new CustomError("Router data not found.", STATUS_CODES.NOT_FOUND);
+    }
+
+    return res.status(STATUS_CODES.SUCCESS).json(routerData);
+  } catch (error) {
+    next(error);
   }
 };
 

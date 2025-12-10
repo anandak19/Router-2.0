@@ -58,22 +58,28 @@ export const validateInputs = async (req, res, next) => {
 // for token validation
 export const validateToken = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      throw new CustomError(
-        "Authorization header is missing",
-        STATUS_CODES.BAD_REQUEST
-      );
+    // Try from cookies
+    let token = req.cookies?.token;
+
+    // If not in cookies, try Authorization header
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        throw new CustomError(
+          "Token not found in cookies or authorization header",
+          STATUS_CODES.BAD_REQUEST
+        );
+      }
+
+      const parts = authHeader.split(" ");
+      if (parts.length !== 2 || parts[0] !== "Bearer") {
+        throw new CustomError("Invalid token format", STATUS_CODES.BAD_REQUEST);
+      }
+
+      token = parts[1];
     }
 
-    // Verify the format is 'Bearer <token>'
-    const parts = authHeader.split(" ");
-    if (parts.length !== 2 || parts[0] !== "Bearer") {
-      throw new CustomError("Invalid token format", STATUS_CODES.BAD_REQUEST);
-    }
-
-    const token = parts[1];
-
+    // Verify the token
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.SECRET_KEY);
@@ -84,15 +90,16 @@ export const validateToken = async (req, res, next) => {
       );
     }
 
+    // Check if user exists
     const user = await userModel.findById(decoded.id);
     if (!user) {
       throw new CustomError("Access denied!", STATUS_CODES.UNAUTHORIZED);
     }
 
     req.user = user;
-
     next();
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
+
