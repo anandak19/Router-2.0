@@ -4,6 +4,7 @@ import {
   loginUser,
   addClient,
   getLatestTransaction,
+  getUserDetails,
 } from "../controllers/userController.js";
 import {
   authenticateAdmin,
@@ -22,7 +23,7 @@ const router = express.Router();
 /**
  * Create and Register new Admin to the system
  */
-router.post("/register/admin", validateInputs, registerAdmin);
+router.post("/register/admin", validateInputs, registerAdmin); // APP WEAK POINT, TODO: FIX IT
 
 /**
  * Create and add new "client" - user to the system by Admin
@@ -32,7 +33,7 @@ router.post(
   validateToken,
   authenticateAdmin,
   validateInputs,
-  addClient
+  addClient,
 );
 
 /**
@@ -61,5 +62,10 @@ router.get("/web/is-login", validateToken, isLogin);
  * Requested user as collectedFrom (last collection done on me)
  */
 router.get("/transactions/latest", validateToken, getLatestTransaction);
+
+/**
+ * Get user details of logged in user
+ */
+router.get("/user-details", validateToken, getUserDetails);
 
 export default router;

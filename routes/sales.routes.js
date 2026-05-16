@@ -43,7 +43,6 @@ router.get(
  * Get vouchers sales on router by logged in user
  * - returns vouchers with its cost only (like history) and not aggregated value
  * - can filter by period / start & end dates
- * - TODO: Add router id to match stage to complete the method
  */
 router.get(
   "/user/router/:routerId/vouchers",

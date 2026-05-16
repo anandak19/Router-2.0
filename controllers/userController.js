@@ -19,7 +19,7 @@ export const registerAdmin = async (req, res, next) => {
       $or: [{ email: email }, { userName: userName }],
     });
     if (existingUser) {
-      throw new CustomError("User already exists", STATUS_CODES.CONFLICT)
+      throw new CustomError("User already exists", STATUS_CODES.CONFLICT);
     }
 
     const newUser = new userModel({
@@ -31,9 +31,11 @@ export const registerAdmin = async (req, res, next) => {
     });
 
     await newUser.save();
-    res.status(STATUS_CODES.CREATED).json({ message: "User registered successfully" });
+    res
+      .status(STATUS_CODES.CREATED)
+      .json({ message: "User registered successfully" });
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
@@ -44,13 +46,13 @@ export const loginUser = async (req, res, next) => {
   try {
     const userData = await userModel.findOne({ email });
     if (!userData) {
-      throw new CustomError("User not found", STATUS_CODES.NOT_FOUND)
+      throw new CustomError("User not found", STATUS_CODES.NOT_FOUND);
     }
 
     // check password
     const isMatch = password === userData.password;
     if (!isMatch) {
-      throw new CustomError( "Invalid password", STATUS_CODES.BAD_REQUEST)
+      throw new CustomError("Invalid password", STATUS_CODES.BAD_REQUEST);
     }
 
     // create a token
@@ -58,7 +60,7 @@ export const loginUser = async (req, res, next) => {
     const userID = userData._id;
     const token = jwt.sign(
       { id: userData._id, userName },
-      process.env.SECRET_KEY
+      process.env.SECRET_KEY,
     );
 
     // sending username and token to frontend
@@ -66,7 +68,7 @@ export const loginUser = async (req, res, next) => {
       .status(STATUS_CODES.SUCCESS)
       .json({ userName, userID, token, userType: userData.userType });
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
@@ -80,11 +82,11 @@ export const addClient = async (req, res, next) => {
     const existingUser = await userModel.findOne(
       { $or: [{ email }, { userName }] },
       null,
-      { session }
+      { session },
     );
 
     if (existingUser) {
-      throw new CustomError( "User already exists", STATUS_CODES.CONFLICT)
+      throw new CustomError("User already exists", STATUS_CODES.CONFLICT);
     }
 
     const newUser = new userModel({
@@ -106,10 +108,12 @@ export const addClient = async (req, res, next) => {
     await session.commitTransaction();
     session.endSession();
 
-    res.status(STATUS_CODES.CREATED).json({ message: "Client user registered successfully" });
+    res
+      .status(STATUS_CODES.CREATED)
+      .json({ message: "Client user registered successfully" });
   } catch (error) {
     await session.abortTransaction();
-    next(error)
+    next(error);
   } finally {
     session.endSession();
   }
@@ -119,11 +123,11 @@ export const addClient = async (req, res, next) => {
  * Get last cash collection made on requested user
  * Requested user as collectedFrom
  */
-export const getLatestTransaction = async (req, res,next) => {
+export const getLatestTransaction = async (req, res, next) => {
   try {
     const user = req.user;
     if (!user || !user._id) {
-      throw new CustomError( "User details not found", STATUS_CODES.NOT_FOUND)
+      throw new CustomError("User details not found", STATUS_CODES.NOT_FOUND);
     }
 
     const transactionsPipeline = [
@@ -163,12 +167,35 @@ export const getLatestTransaction = async (req, res,next) => {
       },
     ];
 
-    const latestTransaction = await cashCollectionsModel.aggregate(
-      transactionsPipeline
-    );
+    const latestTransaction =
+      await cashCollectionsModel.aggregate(transactionsPipeline);
     res.status(STATUS_CODES.SUCCESS).json(latestTransaction);
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
+export const getUserDetails = async (req, res, next) => {
+  try {
+    const user = req.user;
+    if (!user || !user._id) {
+      throw new CustomError("User details not found", STATUS_CODES.NOT_FOUND);
+    }
+
+    const userDetails = {
+      id: user._id,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      userName: user.userName,
+      userType: user.userType,
+      totalSales: user.totalSales,
+      totalCollectedCash: user.totalCollectedCash,
+      balanceLeft: user.balanceLeft,
+      userCollectedCash: user.userCollectedCash,
+    };
+
+    res.status(STATUS_CODES.SUCCESS).json(userDetails);
+  } catch (error) {
+    next(error);
+  }
+};

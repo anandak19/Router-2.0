@@ -28,4 +28,15 @@ export const validateInput = {
     const userNameRegex = /^[a-zA-Z0-9_]{3,20}$/;
     return userNameRegex.test(userName);
   },
+
+  /**
+   * Validate password format
+   * - Password must be at least 6 characters long and contain at least one uppercase letter, one lowercase letter and one number
+   * @param {string} password
+   * @returns {boolean}
+   */
+  validatePassword: (password) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
+    return passwordRegex.test(password);
+  },
 };

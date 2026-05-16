@@ -34,7 +34,7 @@ export const getSalesByRouter = async (req, res, next) => {
       if (!user) {
         throw new CustomError(
           "Selected user was not found",
-          STATUS_CODES.NOT_FOUND
+          STATUS_CODES.NOT_FOUND,
         );
       }
       matchStage.userId = user._id;
@@ -131,7 +131,7 @@ export const getVoucherHistory = async (req, res, next) => {
       if (!user) {
         throw new CustomError(
           "Selected user was not found",
-          STATUS_CODES.NOT_FOUND
+          STATUS_CODES.NOT_FOUND,
         );
       }
       matchStage.userId = user._id;
@@ -182,7 +182,7 @@ export const getVoucherHistory = async (req, res, next) => {
 
 /**
  * Total sales of loggedin user in each routers (userRouters)
- * - returns each router data with all details and total balance 
+ * - returns each router data with all details and total balance
  */
 export const totalSalesByUser = async (req, res, next) => {
   try {
@@ -191,14 +191,14 @@ export const totalSalesByUser = async (req, res, next) => {
     if (!user) {
       throw new CustomError(
         "User not authenticated",
-        STATUS_CODES.UNAUTHORIZED
+        STATUS_CODES.UNAUTHORIZED,
       );
     }
 
     if (!user._id) {
       throw new CustomError(
         "User ID is missing or invalid",
-        STATUS_CODES.BAD_REQUEST
+        STATUS_CODES.BAD_REQUEST,
       );
     }
 
@@ -207,7 +207,7 @@ export const totalSalesByUser = async (req, res, next) => {
     if (!salesData) {
       throw new CustomError(
         "No sales data found for this user",
-        STATUS_CODES.NOT_FOUND
+        STATUS_CODES.NOT_FOUND,
       );
     }
 
@@ -285,22 +285,21 @@ export const salesOfGivenUser = async (req, res, next) => {
 /**
  * Get vouchers sales on router by logged in user
  * - returns vouchers with its cost only (like history) and not aggregated value
- * - TODO: Add router id to match stage to complete the method
  */
 export const getVoucherSaleOnRouterByLoggedinUser = async (req, res, next) => {
   try {
     const { startDate, endDate, period } = req;
-    const routerId = req.router._id; // TODO: use routerId in match stage to complete the method
+    const routerId = req.router._id;
     const user = req.user;
 
     if (!user || !user._id) {
       throw new CustomError(
         "Please Login to continue",
-        STATUS_CODES.UNAUTHORIZED
+        STATUS_CODES.UNAUTHORIZED,
       );
     }
 
-    const matchStage = { userId: user._id };
+    const matchStage = { userId: user._id, routerId };
 
     if (startDate && endDate) {
       matchStage.createdAt = { $gte: startDate, $lte: endDate };
@@ -329,10 +328,7 @@ export const getVoucherSaleOnRouterByLoggedinUser = async (req, res, next) => {
       { $sort: { createdAt: -1 } },
     ];
 
-
-    console.log('fetching')
     const userVouchers = await voucherModel.aggregate(pipeline);
-    console.log(userVouchers)
 
     return res.status(STATUS_CODES.SUCCESS).json({
       period,

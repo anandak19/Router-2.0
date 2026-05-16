@@ -22,12 +22,12 @@ export const authenticateAdmin = async (req, res, next) => {
 
 export const validateInputs = async (req, res, next) => {
   try {
-    const { email, phoneNumber, userName } = req.body;
+    const { email, phoneNumber, userName, password } = req.body;
 
-    if (!email || !phoneNumber || !userName) {
+    if (!email || !phoneNumber || !userName || !password) {
       throw new CustomError(
         "All fields are required",
-        STATUS_CODES.BAD_REQUEST
+        STATUS_CODES.BAD_REQUEST,
       );
     }
 
@@ -38,14 +38,21 @@ export const validateInputs = async (req, res, next) => {
     if (!validateInput.validatePhoneNumber(phoneNumber)) {
       throw new CustomError(
         "Invalid phone number format",
-        STATUS_CODES.BAD_REQUEST
+        STATUS_CODES.BAD_REQUEST,
       );
     }
 
     if (!validateInput.validateUserName(userName)) {
       throw new CustomError(
         "Invalid username format",
-        STATUS_CODES.BAD_REQUEST
+        STATUS_CODES.BAD_REQUEST,
+      );
+    }
+
+    if (!validateInput.validatePassword(password)) {
+      throw new CustomError(
+        "Password must be 5+ characters with uppercase, lowercase, and a number",
+        STATUS_CODES.BAD_REQUEST,
       );
     }
 
@@ -71,7 +78,7 @@ export const validateToken = async (req, res, next) => {
       if (!authHeader) {
         throw new CustomError(
           "Token not found in cookies or authorization header",
-          STATUS_CODES.BAD_REQUEST
+          STATUS_CODES.BAD_REQUEST,
         );
       }
 
@@ -90,7 +97,7 @@ export const validateToken = async (req, res, next) => {
     } catch (error) {
       throw new CustomError(
         `Error in authentication: ${error.message}`,
-        STATUS_CODES.BAD_REQUEST
+        STATUS_CODES.BAD_REQUEST,
       );
     }
 
@@ -106,4 +113,3 @@ export const validateToken = async (req, res, next) => {
     next(error);
   }
 };
-
