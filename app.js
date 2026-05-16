@@ -2,6 +2,7 @@ import express from "express";
 import errorHandler from "./middlewares/errorHandler.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import morgan from "morgan";
 import userRoutes from "./routes/user.routes.js";
 import routerRoute from "./routes/router.routes.js";
 import salesRoutes from "./routes/sales.routes.js";
@@ -14,14 +15,17 @@ app.use(
   cors({
     origin: true,
     credentials: true,
-  })
+  }),
 );
+
+app.use(morgan("dev"));
+
 app.use(express.json());
 
 app.use(cookieParser());
 
 app.get("/", (req, res) => {
-  res.send("Welcome to backend");
+  res.send("Welcome to cloud fi");
 });
 
 app.use("/api/user", userRoutes);

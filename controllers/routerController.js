@@ -103,7 +103,9 @@ export const getUserRouters = async (req, res, next) => {
   }
 };
 
-// get router cash of selected router on user router collection
+/**
+ * Get total cash data / total sales on selected router on user-router collection
+ */
 export const getOneUserRouterCash = async (req, res, next) => {
   try {
     const user = req.user;

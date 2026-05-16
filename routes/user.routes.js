@@ -18,7 +18,15 @@ import {
 
 const router = express.Router();
 
+//---APP BASED ROUTES---
+/**
+ * Create and Register new Admin to the system
+ */
 router.post("/register/admin", validateInputs, registerAdmin);
+
+/**
+ * Create and add new "client" - user to the system by Admin
+ */
 router.post(
   "/register",
   validateToken,
@@ -26,14 +34,32 @@ router.post(
   validateInputs,
   addClient
 );
+
+/**
+ * Login App based user
+ */
 router.post("/login", loginUser);
 
-// get the last transaction / cash collection made on user
-router.get("/transactions/latest", validateToken, getLatestTransaction);
-
-//web based routes
+//---WEB BASED ROUTES---
+/**
+ * Login web based user
+ */
 router.post("/web/login", loginWebUser);
+
+/**
+ * Logout web based user
+ */
 router.post("/web/logout", logoutWebUser);
+/**
+ * Check if the user is loggedin
+ */
 router.get("/web/is-login", validateToken, isLogin);
+
+//---APP & WEB BASED ROUTES---
+/**
+ * Get last cash collection (transaction) made on requested user
+ * Requested user as collectedFrom (last collection done on me)
+ */
+router.get("/transactions/latest", validateToken, getLatestTransaction);
 
 export default router;

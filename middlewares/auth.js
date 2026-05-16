@@ -55,7 +55,11 @@ export const validateInputs = async (req, res, next) => {
   }
 };
 
-// for token validation
+/**
+ * For Token validation (Authorization)
+ * - Both web request and app request use this same method
+ * - After varification user object is attached to request.user
+ */
 export const validateToken = async (req, res, next) => {
   try {
     // Try from cookies
@@ -79,7 +83,7 @@ export const validateToken = async (req, res, next) => {
       token = parts[1];
     }
 
-    // Verify the token
+    // Verify the token with jwt
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.SECRET_KEY);

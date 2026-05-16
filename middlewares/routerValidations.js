@@ -17,6 +17,11 @@ export const validateNewRouterData = (req, res, next) => {
   }
 };
 
+/**
+ * Varify Router id in params
+ * - Check id format and existance
+ * - Add router details object to request.router
+ */
 export const varifyRouter = async (req, res, next) => {
   try {
     const { routerId } = req.params;

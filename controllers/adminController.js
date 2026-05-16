@@ -47,7 +47,7 @@ export const grantViewPermission = async (req, res, next) => {
     if (!userName) {
       throw new CustomError(
         "Please provide a username",
-        STATUS_CODES.BAD_REQUEST
+        STATUS_CODES.BAD_REQUEST,
       );
     }
 
@@ -55,13 +55,19 @@ export const grantViewPermission = async (req, res, next) => {
     if (!user) {
       throw new CustomError(
         "User not found, try another username",
-        STATUS_CODES.NOT_FOUND
+        STATUS_CODES.NOT_FOUND,
       );
     }
 
-    const existingPermission = await permissionModel.findOne({viewer: userId, canView: user._id,})
-    if(existingPermission) {
-      throw new CustomError( "User is already added to your list", STATUS_CODES.CONFLICT)
+    const existingPermission = await permissionModel.findOne({
+      viewer: userId,
+      canView: user._id,
+    });
+    if (existingPermission) {
+      throw new CustomError(
+        "User is already added to your list",
+        STATUS_CODES.CONFLICT,
+      );
     }
 
     const newPermission = new permissionModel({
@@ -101,7 +107,7 @@ export const revokeViewPermission = async (req, res, next) => {
     if (result.deletedCount === 0) {
       throw new CustomError(
         "Already deleted from list",
-        STATUS_CODES.INTERNAL_SERVER_ERROR
+        STATUS_CODES.INTERNAL_SERVER_ERROR,
       );
     }
 
@@ -130,7 +136,7 @@ export const changeUserRole = async (req, res, next) => {
     if (!user.userType) {
       throw new CustomError(
         "User type is missing in user data",
-        STATUS_CODES.BAD_REQUEST
+        STATUS_CODES.BAD_REQUEST,
       );
     }
 
@@ -175,7 +181,7 @@ export const linkRouterWithUser = async (req, res, next) => {
     if (!requestedUserId || !dns || !port || !username || !hotspot) {
       throw new CustomError(
         "Missing required fields",
-        STATUS_CODES.BAD_REQUEST
+        STATUS_CODES.BAD_REQUEST,
       );
     }
 
@@ -196,7 +202,7 @@ export const linkRouterWithUser = async (req, res, next) => {
     if (existingLink) {
       throw new CustomError(
         "Router already linked to this user",
-        STATUS_CODES.BAD_REQUEST
+        STATUS_CODES.BAD_REQUEST,
       );
     }
 
@@ -212,6 +218,6 @@ export const linkRouterWithUser = async (req, res, next) => {
       .status(STATUS_CODES.SUCCESS)
       .json({ success: true, message: "Router linked to user successfully" });
   } catch (error) {
-    next(error)
+    next(error);
   }
 };

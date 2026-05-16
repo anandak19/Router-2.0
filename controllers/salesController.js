@@ -81,16 +81,19 @@ export const getSalesByRouter = async (req, res, next) => {
 
     const salesData = await voucherModel.aggregate(totalCostPipeline);
 
+    // total sales amount
     const totalSales =
       salesData[0].totalSales.length > 0
         ? salesData[0].totalSales[0].totalSalesAmount
         : 0;
 
+    // total vouchers count
     const totalVouchers =
       salesData[0].totalVouchers.length > 0
         ? salesData[0].totalVouchers[0].totalVouchers
         : 0;
 
+    // count break down by profile
     const countBrakedown =
       salesData[0].countBrakedown.length > 0 ? salesData[0].countBrakedown : [];
 
@@ -177,7 +180,10 @@ export const getVoucherHistory = async (req, res, next) => {
   }
 };
 
-// total sales of login in user, in each router and total -- for login users
+/**
+ * Total sales of loggedin user in each routers (userRouters)
+ * - returns each router data with all details and total balance 
+ */
 export const totalSalesByUser = async (req, res, next) => {
   try {
     const user = req.user;
@@ -196,6 +202,7 @@ export const totalSalesByUser = async (req, res, next) => {
       );
     }
 
+    // router sales (user routers with all details)
     const salesData = await getUserSales(user._id);
     if (!salesData) {
       throw new CustomError(
@@ -214,7 +221,11 @@ export const totalSalesByUser = async (req, res, next) => {
   }
 };
 
-// total sales of given user , in each router and total
+/**
+ * Returns total sales of given user , in all routers (total voucher sales)
+ * - Sum down the cost of all vouchers into one and count's into one
+ * - Returns total cost and total count
+ */
 export const salesOfGivenUser = async (req, res, next) => {
   try {
     const startDate = req.startDate;
@@ -224,13 +235,13 @@ export const salesOfGivenUser = async (req, res, next) => {
     const userId = req.params.id;
 
     if (!userId) {
-      throw new CustomError( "User ID is required"  , STATUS_CODES.BAD_REQUEST)
+      throw new CustomError("User ID is required", STATUS_CODES.BAD_REQUEST);
     }
 
     const user = await userModel.findById(userId);
 
     if (!user) {
-      throw new CustomError(  "User not found", STATUS_CODES.NOT_FOUND)
+      throw new CustomError("User not found", STATUS_CODES.NOT_FOUND);
     }
 
     const matchStage = { userId: user._id };
@@ -265,6 +276,69 @@ export const salesOfGivenUser = async (req, res, next) => {
       startDate: startDate ? startDate.toISOString() : null,
       endDate: endDate ? endDate.toISOString() : null,
       totalUserSales: userSales[0] || { totalSale: 0, totalVouchers: 0 },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get vouchers sales on router by logged in user
+ * - returns vouchers with its cost only (like history) and not aggregated value
+ * - TODO: Add router id to match stage to complete the method
+ */
+export const getVoucherSaleOnRouterByLoggedinUser = async (req, res, next) => {
+  try {
+    const { startDate, endDate, period } = req;
+    const routerId = req.router._id; // TODO: use routerId in match stage to complete the method
+    const user = req.user;
+
+    if (!user || !user._id) {
+      throw new CustomError(
+        "Please Login to continue",
+        STATUS_CODES.UNAUTHORIZED
+      );
+    }
+
+    const matchStage = { userId: user._id };
+
+    if (startDate && endDate) {
+      matchStage.createdAt = { $gte: startDate, $lte: endDate };
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $project: {
+          _id: 0,
+          id: "$_id",
+          couponNumber: 1,
+          profile: 1,
+          count: 1,
+          cost: 1,
+          phoneNumber: 1,
+          date: {
+            $dateToString: {
+              format: "%d-%m-%Y",
+              date: "$createdAt",
+            },
+          },
+          createdAt: 1,
+        },
+      },
+      { $sort: { createdAt: -1 } },
+    ];
+
+
+    console.log('fetching')
+    const userVouchers = await voucherModel.aggregate(pipeline);
+    console.log(userVouchers)
+
+    return res.status(STATUS_CODES.SUCCESS).json({
+      period,
+      startDate: startDate ? startDate.toISOString() : null,
+      endDate: endDate ? endDate.toISOString() : null,
+      vouchers: userVouchers,
     });
   } catch (error) {
     next(error);

@@ -4,6 +4,7 @@ import { varifyRouter } from "../middlewares/routerValidations.js";
 import {
   getSalesByRouter,
   getVoucherHistory,
+  getVoucherSaleOnRouterByLoggedinUser,
   salesOfGivenUser,
   totalSalesByUser,
 } from "../controllers/salesController.js";
@@ -12,7 +13,10 @@ import { getStartDateEndDate } from "../middlewares/helpers.js";
 
 const router = express.Router();
 
-// get the vouchers under the router
+/**
+ * Get ALL vouchers sales on selected router ( total aggregate sales, total vouchers, count break down ( profile, count, subTotalSales))
+ * - can filter by period / start & end dates and by userId
+ */
 router.get(
   "/router/:routerId",
   validateToken,
@@ -22,7 +26,10 @@ router.get(
   getSalesByRouter
 );
 
-// get vouchers history on router
+/**
+ * get ALL vouchers history on router
+ * - can filter by period / start & end dates and by userId
+ */
 router.get(
   "/router/:routerId/vouchers",
   validateToken,
@@ -31,9 +38,33 @@ router.get(
   getStartDateEndDate,
   getVoucherHistory
 );
-// for login users
+
+/**
+ * Get vouchers sales on router by logged in user
+ * - returns vouchers with its cost only (like history) and not aggregated value
+ * - can filter by period / start & end dates
+ * - TODO: Add router id to match stage to complete the method
+ */
+router.get(
+  "/user/router/:routerId/vouchers",
+  validateToken,
+  validateObjectId,
+  varifyRouter,
+  getStartDateEndDate,
+  getVoucherSaleOnRouterByLoggedinUser
+);
+
+/**
+ * Get total sales of loggedin user in each routers (userRouters)
+ * - returns each router data with all details and total balance 
+ */
 router.get("/user", validateToken, totalSalesByUser);
-// to view selected users sales by admin
+
+/**
+ * To get total sales of given user , in all routers (total voucher sales)
+ * - Sum down the cost of all vouchers into one and count's into one
+ * - Returns total cost and total count
+ */
 router.get(
   "/user/:id",
   validateToken,

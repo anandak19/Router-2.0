@@ -115,6 +115,10 @@ export const addClient = async (req, res, next) => {
   }
 };
 
+/**
+ * Get last cash collection made on requested user
+ * Requested user as collectedFrom
+ */
 export const getLatestTransaction = async (req, res,next) => {
   try {
     const user = req.user;
